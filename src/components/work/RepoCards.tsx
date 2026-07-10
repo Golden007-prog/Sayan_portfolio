@@ -24,7 +24,11 @@ async function fetchRepos(): Promise<GitHubRepo[] | null> {
     const res = await fetch(
       `https://api.github.com/users/${owner.githubUser}/repos?sort=updated&per_page=6`,
       {
-        next: { revalidate: 86400 },
+        // Static export (GitHub Pages) forbids ISR — bake at build time there;
+        // keep the daily revalidate for server deploys (Vercel).
+        ...(process.env.GITHUB_PAGES === "true"
+          ? { cache: "force-cache" as const }
+          : { next: { revalidate: 86400 } }),
         headers: { Accept: "application/vnd.github+json" },
       },
     );

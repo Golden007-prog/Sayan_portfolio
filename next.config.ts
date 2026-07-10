@@ -1,6 +1,16 @@
 import type { NextConfig } from "next";
 
 /**
+ * Dual deploy targets:
+ * — Default: server build (Vercel) with security headers + image optimization.
+ * — GITHUB_PAGES=true: static export for github.io with basePath
+ *   /Sayan_portfolio, unoptimized images (no image server), and no headers()
+ *   (GitHub Pages cannot set response headers).
+ */
+const isPages = process.env.GITHUB_PAGES === "true";
+const basePath = isPages ? "/Sayan_portfolio" : "";
+
+/**
  * CSP kept minimal (§293): 'unsafe-inline' is required by next-themes'
  * no-FOUC script and GSAP-injected style attributes.
  */
@@ -16,30 +26,39 @@ const csp = [
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  ...(isPages
+    ? { output: "export" as const, basePath, trailingSlash: true }
+    : {}),
+  // Inject here (not via shell) — Git Bash/MSYS mangles leading-slash env
+  // values into Windows paths, silently corrupting every asset URL.
+  env: { NEXT_PUBLIC_BASE_PATH: basePath },
   images: {
     qualities: [75, 82],
     remotePatterns: [{ protocol: "https", hostname: "avatars.githubusercontent.com" }],
+    ...(isPages ? { unoptimized: true } : {}),
   },
-  async headers() {
-    return [
-      {
-        source: "/(.*)",
-        headers: [
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Content-Security-Policy", value: csp },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+  ...(isPages
+    ? {}
+    : {
+        headers: async () => [
+          {
+            source: "/(.*)",
+            headers: [
+              { key: "X-Frame-Options", value: "DENY" },
+              { key: "X-Content-Type-Options", value: "nosniff" },
+              { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+              { key: "Content-Security-Policy", value: csp },
+              { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+            ],
+          },
+          {
+            source: "/media/(.*)",
+            headers: [
+              { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+            ],
+          },
         ],
-      },
-      {
-        source: "/media/(.*)",
-        headers: [
-          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
-        ],
-      },
-    ];
-  },
+      }),
 };
 
 /**

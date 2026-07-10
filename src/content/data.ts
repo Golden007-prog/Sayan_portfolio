@@ -3,6 +3,14 @@
  * Components are content-agnostic; never hard-code copy in components.
  */
 
+/**
+ * Asset base path. Empty for server deploys; "/Sayan_portfolio" when
+ * exporting for GitHub Pages (set via NEXT_PUBLIC_BASE_PATH at build).
+ * next/link and the router handle basePath themselves — this prefix is
+ * ONLY for raw asset URLs (<video src>, poster, next/image src, downloads).
+ */
+export const bp = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+
 export interface LanguageSpoken {
   name: string;
   level: string;
@@ -77,7 +85,7 @@ export const owner = {
   linkedin: "https://www.linkedin.com/in/sayan-chakraborty-b804a624b/",
   github: "https://github.com/Sayan1320",
   githubUser: "Sayan1320",
-  resumePdf: "/resume.pdf",
+  resumePdf: `${bp}/resume.pdf`,
   availability: "Open to opportunities",
   summary:
     "Mainframe Developer skilled in COBOL, CICS, SQL, JCL, DB2 and C++. Experienced in developing and maintaining mainframe software that meets business needs, with excellent problem-solving skills and a passion for staying up to date — bringing innovation and efficiency to mainframe development.",
@@ -239,7 +247,7 @@ export const projects: Project[] = [
     ],
     accent: "#22D3EE",
     github: "[ADD LINK]",
-    cover: "/media/proj-helios.jpg",
+    cover: `${bp}/media/proj-helios.jpg`,
     year: "2026",
     role: "Backend & AI Engineering",
   },
@@ -262,7 +270,7 @@ export const projects: Project[] = [
     ],
     accent: "#7C5CFF",
     github: "[ADD LINK]",
-    cover: "/media/proj-reports.jpg",
+    cover: `${bp}/media/proj-reports.jpg`,
     year: "2023",
     role: "Mainframe Developer",
   },
@@ -285,7 +293,7 @@ export const projects: Project[] = [
     ],
     accent: "#F472B6",
     github: "[ADD LINK]",
-    cover: "/media/proj-fintech.jpg",
+    cover: `${bp}/media/proj-fintech.jpg`,
     year: "2022",
     role: "Fintech Engineering Intern",
   },
@@ -308,7 +316,7 @@ export const projects: Project[] = [
     ],
     accent: "#34D399",
     github: "[ADD LINK]",
-    cover: "/media/proj-endevor.jpg",
+    cover: `${bp}/media/proj-endevor.jpg`,
     year: "2024",
     role: "Product Analyst (ISG)",
   },
@@ -319,12 +327,12 @@ export const beyondCode = {
     title: "Video Editing & Design",
     detail: "Creative editing and design with Adobe Premiere Pro and Illustrator.",
     tools: ["Premiere Pro", "Illustrator"],
-    image: "/media/beyond-edit.jpg",
+    image: `${bp}/media/beyond-edit.jpg`,
   },
   trekking: {
     title: "Trekking",
     detail: "Trekking enthusiast — happiest above the treeline.",
-    image: "/media/beyond-trek.jpg",
+    image: `${bp}/media/beyond-trek.jpg`,
   },
   motto: "Cutting film taught me pacing — I animate the same way.",
   mottos: [
@@ -344,7 +352,7 @@ export const heroStats = [
 /* ————— Site chrome & copy ————— */
 
 export const site = {
-  url: "https://sayan-portfolio.vercel.app", // update after deploy
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://golden007-prog.github.io/Sayan_portfolio",
   title: "Sayan Chakraborty",
   titleTemplate: "%s — Sayan Chakraborty",
   description:
@@ -459,10 +467,10 @@ export const usesPage = {
 };
 
 export const media = {
-  heroVideoMp4: "/media/hero-loop.mp4",
-  heroVideoWebm: "/media/hero-loop.webm",
-  heroPoster: "/media/hero-poster.jpg",
-  aboutPortrait: "/media/about-portrait.png",
-  aboutAmbient: "/media/about-ambient.mp4",
-  ogImage: "/media/og-image.jpg",
+  heroVideoMp4: `${bp}/media/hero-loop.mp4`,
+  heroVideoWebm: `${bp}/media/hero-loop.webm`,
+  heroPoster: `${bp}/media/hero-poster.jpg`,
+  aboutPortrait: `${bp}/media/about-portrait.png`,
+  aboutAmbient: `${bp}/media/about-ambient.mp4`,
+  ogImage: `${bp}/media/og-image.jpg`,
 };

@@ -13,7 +13,7 @@ import { Analytics } from "@/components/providers/Analytics";
 import { AuroraBackground } from "@/components/fx/AuroraBackground";
 import { GrainOverlay } from "@/components/fx/GrainOverlay";
 import { ScrollProgressBar } from "@/components/fx/ScrollProgressBar";
-import { site, owner } from "@/content/data";
+import { site, owner, bp, media } from "@/content/data";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -57,23 +57,23 @@ export const metadata: Metadata = {
     siteName: owner.name,
     title: `${owner.name} — Mainframe Developer · AI Explorer`,
     description: site.description,
-    images: [{ url: "/media/og-image.jpg", width: 1200, height: 630, alt: `${owner.name} — portfolio` }],
+    images: [{ url: media.ogImage, width: 1200, height: 630, alt: `${owner.name} — portfolio` }],
   },
   twitter: {
     card: "summary_large_image",
     title: `${owner.name} — Mainframe Developer · AI Explorer`,
     description: site.description,
-    images: ["/media/og-image.jpg"],
+    images: [media.ogImage],
   },
   alternates: { canonical: "/" },
   icons: {
     icon: [
-      { url: "/favicon.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico", sizes: "any" },
+      { url: `${bp}/favicon.svg`, type: "image/svg+xml" },
+      { url: `${bp}/favicon.ico`, sizes: "any" },
     ],
-    apple: "/apple-touch-icon.png",
+    apple: `${bp}/apple-touch-icon.png`,
   },
-  manifest: "/manifest.webmanifest",
+  manifest: `${bp}/manifest.webmanifest`,
 };
 
 export const viewport: Viewport = {

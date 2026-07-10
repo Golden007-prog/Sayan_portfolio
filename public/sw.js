@@ -1,10 +1,13 @@
-/* Minimal service worker: offline fallback only (§288). */
+/* Minimal service worker: offline fallback only (§288).
+   All paths resolve relative to the SW's own location so the same file
+   works at "/" (Vercel) and "/Sayan_portfolio/" (GitHub Pages). */
 const CACHE = "sayan-os-v1";
-const OFFLINE_URL = "/offline.html";
+const OFFLINE_URL = new URL("offline.html", self.location.href).pathname;
+const ICON_URL = new URL("favicon.svg", self.location.href).pathname;
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll([OFFLINE_URL, "/favicon.svg"])),
+    caches.open(CACHE).then((cache) => cache.addAll([OFFLINE_URL, ICON_URL])),
   );
   self.skipWaiting();
 });
