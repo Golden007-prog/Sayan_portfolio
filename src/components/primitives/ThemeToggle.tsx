@@ -2,8 +2,10 @@
 
 import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { cn } from "@/lib/cn";
+
+const noopSubscribe = () => () => {};
 
 /**
  * Sun ↔ moon morph: the moon crescent is carved by a masking circle that
@@ -13,8 +15,8 @@ import { cn } from "@/lib/cn";
  */
 export function ThemeToggle({ className }: { className?: string }) {
   const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  // true after hydration, false during SSR — avoids theme-mismatch flicker
+  const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
 
   const isDark = mounted ? resolvedTheme === "dark" : true;
 

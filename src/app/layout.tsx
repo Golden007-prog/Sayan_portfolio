@@ -6,6 +6,10 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { SmoothScroll } from "@/components/providers/SmoothScroll";
 import { CursorProvider } from "@/components/providers/CursorProvider";
 import { ToastProvider } from "@/components/providers/ToastProvider";
+import { RouteTransition } from "@/components/providers/RouteTransition";
+import { EasterEggs } from "@/components/providers/EasterEggs";
+import { ServiceWorkerRegister } from "@/components/providers/ServiceWorkerRegister";
+import { Analytics } from "@/components/providers/Analytics";
 import { AuroraBackground } from "@/components/fx/AuroraBackground";
 import { GrainOverlay } from "@/components/fx/GrainOverlay";
 import { ScrollProgressBar } from "@/components/fx/ScrollProgressBar";
@@ -86,7 +90,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     // suppressHydrationWarning: next-themes stamps the theme class pre-paint
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
       {/* ↑↑↓↓←→←→BA */}
       <body
         className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}
@@ -101,7 +105,10 @@ export default function RootLayout({
                 <AuroraBackground />
                 <GrainOverlay />
                 <ScrollProgressBar />
-                {children}
+                <RouteTransition>{children}</RouteTransition>
+                <EasterEggs />
+                <ServiceWorkerRegister />
+                <Analytics />
               </ToastProvider>
             </CursorProvider>
           </SmoothScroll>

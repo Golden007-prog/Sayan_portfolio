@@ -39,7 +39,9 @@ export function CursorProvider({ children }: { children: ReactNode }) {
   const labelRef = useRef<HTMLSpanElement>(null);
   const reduced = useReducedMotionSafe();
   const sparkleRef = useRef(sparkle);
-  sparkleRef.current = sparkle;
+  useEffect(() => {
+    sparkleRef.current = sparkle;
+  }, [sparkle]);
 
   useEffect(() => {
     const fine = window.matchMedia("(hover: hover) and (pointer: fine)");

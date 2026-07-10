@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode, type ElementType } from "react";
-import { gsap, ScrollTrigger } from "@/lib/gsap";
+import { gsap } from "@/lib/gsap";
 import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 
 export type RevealVariant = "fade-up" | "mask" | "blur" | "scale";

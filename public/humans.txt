@@ -1,0 +1,15 @@
+/* TEAM */
+Developer & Owner: Sayan Chakraborty
+Site: Bengaluru, India
+Contact: iamsayan13201518 [at] gmail.com
+GitHub: https://github.com/Sayan1320
+
+/* THANKS */
+The 1960s engineers who built systems still running today.
+
+/* SITE */
+Stack: Next.js · TypeScript · Tailwind CSS · GSAP · Framer Motion · Lenis
+Assets: Higgsfield AI (aurora loop + covers) · code-composed OG
+Fonts: Space Grotesk · Inter · JetBrains Mono
+Standards: HTML5, WCAG 2.1 AA, prefers-reduced-motion respected
+IBM 3270 terminals were harmed in the making of this site. Emotionally.
