@@ -32,7 +32,8 @@ const styles = `
 .xp-node.xp-lit::after{animation:xp-pulse .9s var(--ease-out-soft) 1}
 .xp-node.xp-node--live::after{animation:xp-pulse 2.4s var(--ease-out-soft) infinite}
 @keyframes xp-pulse{0%{opacity:.85;transform:scale(.5)}100%{opacity:0;transform:scale(2.1)}}
-.xp-badge{background:linear-gradient(110deg,var(--accent-1) 0%,var(--accent-2) 35%,var(--accent-3) 60%,var(--accent-1) 85%);background-size:250% 100%;color:#fff;animation:xp-shimmer 3.2s linear infinite;white-space:nowrap}
+.xp-badge{position:relative;background:var(--accent-solid);color:#fff;white-space:nowrap}
+.xp-badge::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(110deg,var(--accent-2) 0%,var(--accent-3) 30%,var(--accent-1) 55%,var(--accent-2) 85%);background-size:250% 100%;-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);mask-composite:exclude;animation:xp-shimmer 3.2s linear infinite;pointer-events:none}
 @keyframes xp-shimmer{from{background-position:0% 0}to{background-position:-250% 0}}
 .xp-conic-hover.glass-conic::before{opacity:0;animation-play-state:paused;transition:opacity .5s var(--ease-out-soft)}
 @media (hover:hover) and (pointer:fine){.xp-conic-hover.glass-conic:hover::before{opacity:1;animation-play-state:running}}
@@ -70,7 +71,7 @@ function BulletText({ text }: { text: string }) {
       {text}
       {ACHIEVEMENT_RE.test(text) && (
         <span
-          className="xp-badge mono-chip ml-2 inline-flex translate-y-[-1px] items-center gap-1 px-2 py-0.5 align-middle text-[0.6rem] font-semibold uppercase"
+          className="xp-badge mono-chip ml-2 inline-flex translate-y-[-1px] items-center gap-1 px-2 py-0.5 align-middle text-[0.7rem] font-semibold uppercase"
           style={{ borderRadius: "var(--radius-chip)" }}
         >
           <span aria-hidden>✦</span> Achievement
@@ -174,7 +175,7 @@ export function Experience() {
   return (
     <section
       id="experience"
-      aria-labelledby="experience-heading"
+      aria-label={sectionCopy.experience.heading}
       className="relative py-[var(--section-pad)]"
     >
       <style>{styles}</style>

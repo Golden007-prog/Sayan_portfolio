@@ -13,6 +13,20 @@ import { Parallax } from "@/components/primitives/Parallax";
 const BLUR =
   "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxMCI+PHJlY3Qgd2lkdGg9IjE2IiBoZWlnaHQ9IjEwIiBmaWxsPSIjMGIwZjFhIi8+PC9zdmc+";
 
+/**
+ * Vivid project accents fail WCAG on the light surface, so readable accent
+ * text (eyebrows, metric numbers) maps to the theme-aware text-safe token;
+ * decorative glow/borders keep the vivid value.
+ */
+const ACCENT_TEXT_VAR: Record<string, string> = {
+  "#7C5CFF": "var(--accent-1-text)",
+  "#22D3EE": "var(--accent-2-text)",
+  "#F472B6": "var(--accent-3-text)",
+  "#34D399": "var(--accent-4-text)",
+};
+const accentTextVar = (accent: string) =>
+  ACCENT_TEXT_VAR[accent.toUpperCase()] ?? accent;
+
 function GithubAction({ url }: { url: string }) {
   if (!url || url === "[ADD LINK]") {
     // Visible placeholder until the real repo link is provided (§117, ground rule 2)
@@ -57,7 +71,12 @@ export function CaseStudy({
     <main
       id="main"
       className="pb-24 pt-28"
-      style={{ "--case-accent": project.accent } as React.CSSProperties}
+      style={
+        {
+          "--case-accent": project.accent,
+          "--case-accent-text": accentTextVar(project.accent),
+        } as React.CSSProperties
+      }
     >
       <div className="container-site">
         <Link
@@ -68,7 +87,10 @@ export function CaseStudy({
         </Link>
 
         <Reveal variant="fade-up" className="mt-10 max-w-4xl">
-          <p className="eyebrow mb-4" style={{ color: "var(--case-accent)" }}>
+          <p
+            className="eyebrow mb-4"
+            style={{ color: "var(--case-accent-text)" }}
+          >
             CASE / {project.year}
           </p>
           <h1 className="text-4xl md:text-6xl">{project.title}</h1>
@@ -143,7 +165,10 @@ export function CaseStudy({
             ] as const
           ).map(([label, text], i) => (
             <Reveal key={label} variant="fade-up" delay={i * 0.05}>
-              <p className="eyebrow mb-3" style={{ color: "var(--case-accent)" }}>
+              <p
+                className="eyebrow mb-3"
+                style={{ color: "var(--case-accent-text)" }}
+              >
                 {String(i + 1).padStart(2, "0")}
               </p>
               <h2 className="mb-4 text-2xl md:text-3xl">{label}</h2>
@@ -157,7 +182,7 @@ export function CaseStudy({
               <GlassCard key={m.label} sheen className="p-7">
                 <p
                   className="font-display text-4xl font-bold"
-                  style={{ color: "var(--case-accent)" }}
+                  style={{ color: "var(--case-accent-text)" }}
                 >
                   {metric(m)}
                 </p>
@@ -198,7 +223,9 @@ export function CaseStudy({
                 alt=""
                 fill
                 sizes="96px"
-                className="object-cover transition-transform duration-500 group-hover:scale-110"
+                placeholder="blur"
+                blurDataURL={BLUR}
+                className="object-cover transition-transform duration-500 group-hover:scale-[1.06]"
               />
             </div>
             <div className="min-w-0">

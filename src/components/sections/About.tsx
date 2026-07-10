@@ -1,9 +1,24 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
-import { Download, GitBranch, Sparkles, Terminal, type LucideIcon } from "lucide-react";
+import {
+  Download,
+  GitBranch,
+  Pause,
+  Play,
+  Sparkles,
+  Terminal,
+  type LucideIcon,
+} from "lucide-react";
 import { gsap } from "@/lib/gsap";
 import { aboutCopy, awards, education, media, owner } from "@/content/data";
 import { GlassCard } from "@/components/primitives/GlassCard";
@@ -24,7 +39,22 @@ const ICONS: Record<string, LucideIcon> = {
   sparkles: Sparkles,
 };
 
-const ICON_ACCENTS = ["text-accent1", "text-accent2", "text-accent3"];
+// Icon glyphs are readable foreground marks, not decoration — the vivid
+// accents fail WCAG on the light surface, so use the auto-darkening *t tokens.
+const ICON_ACCENTS = ["text-accent1t", "text-accent2t", "text-accent3t"];
+
+/**
+ * Demotes a nested glass chip to a flat translucent surface: the tint, border
+ * and inner highlight from .glass/.glass-1 stay, but backdrop-filter is dropped.
+ * Every chip and card in this section sits inside the already-frosted tier-2
+ * panel, and blurred surfaces nested in a blurred parent are the most expensive
+ * kind — this keeps the viewport within the ≤3-large-blurred-regions budget
+ * while the outer panel keeps its frost.
+ */
+const FLAT_GLASS: CSSProperties = {
+  backdropFilter: "none",
+  WebkitBackdropFilter: "none",
+};
 
 /** Tiny deep-space gradient placeholder — blur-up without shipping a real thumb (§71). */
 const PORTRAIT_BLUR =
@@ -128,21 +158,56 @@ const SIH_CHIP = SIH_AWARD
 /* ————— fun-fact rotator (§67) ————— */
 
 function FunFactRotator({ reduced }: { reduced: boolean }) {
-  const [index, setIndex] = useState(0);
   const facts = aboutCopy.funFacts;
+  const [index, setIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  // Pause while the region is hovered or holds keyboard focus (WCAG 2.2.2).
+  const [interacting, setInteracting] = useState(false);
 
+  const canRotate = !reduced && facts.length >= 2;
+  const running = canRotate && !paused && !interacting;
+
+  // Only tick when actually running; under reduced motion the interval never
+  // starts and the first fact renders statically.
   useEffect(() => {
-    if (facts.length < 2) return;
+    if (!running) return;
     const id = window.setInterval(
       () => setIndex((i) => (i + 1) % facts.length),
       3800,
     );
     return () => window.clearInterval(id);
-  }, [facts.length]);
+  }, [running, facts.length]);
 
   return (
-    <GlassCard tier={1} className="px-5 py-4">
-      <p className="eyebrow mb-2">Fun fact</p>
+    <GlassCard
+      tier={1}
+      style={FLAT_GLASS}
+      className="px-5 py-4"
+      onMouseEnter={() => setInteracting(true)}
+      onMouseLeave={() => setInteracting(false)}
+      onFocusCapture={() => setInteracting(true)}
+      onBlurCapture={(e) => {
+        if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+          setInteracting(false);
+        }
+      }}
+    >
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <p className="eyebrow">Fun fact</p>
+        {canRotate && (
+          <button
+            type="button"
+            aria-pressed={paused}
+            onClick={() => setPaused((p) => !p)}
+            className="-my-2 -mr-2 inline-flex h-11 w-11 items-center justify-center rounded-full text-muted-fg transition-colors duration-200 hover:text-fg"
+          >
+            {paused ? <Play size={15} aria-hidden /> : <Pause size={15} aria-hidden />}
+            <span className="sr-only">
+              {paused ? "Resume fun-fact rotation" : "Pause fun-fact rotation"}
+            </span>
+          </button>
+        )}
+      </div>
       <div className="relative min-h-[1.75rem] overflow-hidden">
         <AnimatePresence mode="wait" initial={false}>
           <motion.p
@@ -165,8 +230,44 @@ function FunFactRotator({ reduced }: { reduced: boolean }) {
 
 export function About() {
   const sectionRef = useRef<HTMLElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const reduced = useReducedMotionSafe();
   const { toast } = useToast();
+
+  /* Ambient video decodes only while visible: pause off-screen (§68) and on
+     hidden tabs. Never runs under reduced motion (the element isn't rendered). */
+  useEffect(() => {
+    if (reduced) return;
+    const video = videoRef.current;
+    if (!video) return;
+
+    let onScreen = false;
+    const sync = () => {
+      if (onScreen && document.visibilityState === "visible") {
+        // Attach the source on first reveal, not at mount: an eager `src` on a
+        // below-the-fold autoplaying video pulls ~180KB during the LCP window.
+        if (!video.src) video.src = media.aboutAmbient;
+        void video.play().catch(() => {});
+      } else {
+        video.pause();
+      }
+    };
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        onScreen = entries[0]?.isIntersecting ?? false;
+        sync();
+      },
+      { threshold: 0.01 },
+    );
+    io.observe(video);
+    document.addEventListener("visibilitychange", sync);
+
+    return () => {
+      io.disconnect();
+      document.removeEventListener("visibilitychange", sync);
+    };
+  }, [reduced]);
 
   /* Hand-drawn underline draw-on (§64) + language proficiency bars (§65). */
   useEffect(() => {
@@ -237,7 +338,7 @@ export function About() {
     <section
       id="about"
       ref={sectionRef}
-      aria-labelledby="about-heading"
+      aria-label={aboutCopy.heading}
       className="relative py-[var(--section-pad)]"
     >
       <div className="container-site">
@@ -278,13 +379,12 @@ export function About() {
               className="absolute -inset-x-[8%] -inset-y-[16%] -z-10 overflow-hidden"
             >
               <video
-                src={media.aboutAmbient}
+                ref={videoRef}
                 aria-hidden
                 muted
                 loop
-                autoPlay
                 playsInline
-                preload="metadata"
+                preload="none"
                 tabIndex={-1}
                 className="pointer-events-none h-full w-full object-cover opacity-25"
               />
@@ -299,8 +399,8 @@ export function About() {
                 <Reveal variant="scale">
                   <TiltCard maxDeg={6} className="mx-auto w-full max-w-sm">
                     {/* Animated gradient ring frame (§60) */}
-                    <div className="glass glass-conic p-2">
-                      <div className="relative aspect-[4/5] overflow-hidden rounded-[calc(var(--radius-glass)-0.5rem)]">
+                    <div className="glass glass-conic p-2" style={FLAT_GLASS}>
+                      <div className="group relative aspect-[4/5] overflow-hidden rounded-[calc(var(--radius-glass)-0.5rem)]">
                         <Image
                           src={media.aboutPortrait}
                           alt={`${owner.name} — ${owner.headline}`}
@@ -308,7 +408,13 @@ export function About() {
                           sizes="(min-width: 768px) 24rem, 90vw"
                           placeholder="blur"
                           blurDataURL={PORTRAIT_BLUR}
-                          className="object-cover"
+                          // Zoom stays inside the clipped frame, transform-only,
+                          // fine-pointer + hover-capable only, off under reduced motion (§195).
+                          className={cn(
+                            "object-cover",
+                            !reduced &&
+                              "transition-transform duration-[600ms] ease-[var(--ease-out-soft)] [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.05]",
+                          )}
                         />
                       </div>
                     </div>
@@ -348,11 +454,17 @@ export function About() {
 
                 {/* Badge row: CGPA + SIH mono chips (§69) */}
                 <Reveal variant="fade-up" delay={0.08} className="flex flex-wrap gap-2">
-                  <span className="mono-chip glass-1 rounded-full px-3.5 py-1.5">
+                  <span
+                    className="mono-chip glass-1 rounded-full px-3.5 py-1.5"
+                    style={FLAT_GLASS}
+                  >
                     {education.cgpa}
                   </span>
                   {SIH_CHIP && (
-                    <span className="mono-chip glass-1 rounded-full px-3.5 py-1.5">
+                    <span
+                      className="mono-chip glass-1 rounded-full px-3.5 py-1.5"
+                      style={FLAT_GLASS}
+                    >
                       {SIH_CHIP}
                     </span>
                   )}
@@ -371,10 +483,12 @@ export function About() {
                         <GlassCard
                           tier={1}
                           sheen
+                          style={FLAT_GLASS}
                           className="group h-full p-5 transition-transform duration-300 ease-[var(--ease-out-soft)] hover:-translate-y-1.5"
                         >
                           <span
                             aria-hidden
+                            style={FLAT_GLASS}
                             className={cn(
                               "glass-1 inline-flex h-10 w-10 items-center justify-center rounded-full transition-transform duration-300 ease-[var(--ease-out-soft)] group-hover:-translate-y-1 group-hover:rotate-6",
                               ICON_ACCENTS[i % ICON_ACCENTS.length],
@@ -397,7 +511,11 @@ export function About() {
                   className="grid gap-3 sm:grid-cols-3"
                 >
                   {owner.languagesSpoken.map((lang) => (
-                    <div key={lang.name} className="glass-1 rounded-2xl px-4 py-3">
+                    <div
+                      key={lang.name}
+                      className="glass-1 rounded-2xl px-4 py-3"
+                      style={FLAT_GLASS}
+                    >
                       <div className="mono-chip flex items-baseline justify-between gap-2">
                         <span>{lang.name}</span>
                         <span className="text-muted-fg">{lang.level}</span>

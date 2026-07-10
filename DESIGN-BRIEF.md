@@ -16,6 +16,9 @@ Framer Motion, Lenis. Windows dev box.
    `import { gsap, ScrollTrigger } from "@/lib/gsap"`.
 4. Every GSAP animation inside `gsap.context(() => {...}, el)` with
    `return () => ctx.revert()` — strict-mode safe, zero leaks.
+   **Never use `autoAlpha`.** It sets `visibility: hidden`, which removes the
+   node from the accessibility tree — that silently hid every section heading
+   from screen readers and broke heading order. Animate `opacity`.
 5. Every animated component consumes `useReducedMotionSafe()` from
    `@/hooks/useReducedMotionSafe` and collapses to fades/static.
 6. Animate ONLY `transform` / `opacity` (+ `clip-path` for masks). Reveal
@@ -34,10 +37,25 @@ Framer Motion, Lenis. Windows dev box.
 - `.glass-sheen` (hover light sweep), `.glass-conic` (rotating gradient border)
 - `.container-site` (max-w 80rem + fluid gutter), `.eyebrow` (mono micro-label),
   `.mono-chip`, `.text-gradient`, `.link-underline`, `.headline-flip`, `.sr-only`
-- Tailwind token colors: `bg-bg`, `bg-bg2`, `text-fg`, `text-muted-fg`,
-  `text-accent1/2/3/4`; fonts `font-display`, `font-body`, `font-mono`
+- Tailwind token colors: `bg-bg`, `bg-bg2`, `text-fg`, `text-muted-fg`;
+  fonts `font-display`, `font-body`, `font-mono`
 - CSS vars: `var(--gradient)`, `var(--glass-border)`, `var(--ease-out-soft)`,
   `var(--section-pad)`, `var(--nav-h)`
+
+## Accent tokens — decoration vs. text (load-bearing)
+
+`--accent-1..4` / `text-accent1..4` are the **vivid** brand values. Use them
+only for decoration: glows, borders, bar fills, giant display type.
+
+`--accent-1-text..4-text` / `text-accent1t..4t` are **surface-aware**. Use them
+for anything readable: labels, chips, links, indices, form errors, meaningful
+icons. On the light surface the vivid cyan measures 1.69:1 and green 1.80:1 —
+both fail WCAG AA — so accent-colored *text* must use these.
+
+Same split for gradients: `var(--gradient-text)` (and the `.text-gradient`
+utility) for gradient-filled text; `var(--gradient)` for decorative fills.
+`var(--accent-solid)` is a violet that white text clears 4.5:1 on, in both
+themes. Verify any change with `npm run contrast`.
 
 ## Primitives (import from `@/components/primitives/*`, providers from `@/components/providers/*`)
 

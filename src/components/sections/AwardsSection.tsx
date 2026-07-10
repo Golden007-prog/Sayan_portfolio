@@ -1,8 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useRef, useState } from "react";
-import { awards, sectionCopy, type Award } from "@/content/data";
+import { useEffect, useId, useRef, useState } from "react";
+import { awards, awardsTicker, sectionCopy, type Award } from "@/content/data";
 import { SectionHeading } from "@/components/primitives/SectionHeading";
 import { Marquee } from "@/components/primitives/Marquee";
 import { Reveal } from "@/components/primitives/Reveal";
@@ -16,9 +16,6 @@ const Confetti = dynamic(
   () => import("@/components/fx/Confetti").then((m) => m.Confetti),
   { ssr: false },
 );
-
-/** Compact ticker forms of the `awards` entries (§138). */
-const ACHIEVEMENT_TICKER = ["SIH 2022", "WORLD RECORD", "IBM TECHXCHANGE 2026"];
 
 const PLACEHOLDER_LINK = "[ADD LINK]";
 
@@ -38,7 +35,7 @@ const awardsCss = `
 .award-back { transform: rotateY(180deg); }
 
 /* Sheen surfaces clip the global outer focus ring — draw an inset one (§a11y) */
-.award-scene:focus-visible {
+.award-flip-btn:focus-visible {
   outline: none;
   box-shadow:
     inset 0 0 0 2px var(--accent-2),
@@ -138,7 +135,7 @@ function MedalIcon() {
       height="40"
       fill="none"
       aria-hidden
-      className="shrink-0 text-accent3"
+      className="shrink-0 text-accent3t"
     >
       <path
         className="award-ribbon"
@@ -174,6 +171,7 @@ interface AwardCardProps {
 function AwardCard({ award, isWorldRecord, showFx }: AwardCardProps) {
   const [flipped, setFlipped] = useState(false);
   const reduced = useReducedMotionSafe();
+  const factsId = useId();
 
   // Sets --holo-x/y (in %) on the card wrapper; the overlay inherits them (§132).
   const handleHoloMove = (e: React.MouseEvent<HTMLElement>) => {
@@ -215,20 +213,16 @@ function AwardCard({ award, isWorldRecord, showFx }: AwardCardProps) {
         )}
         {isWorldRecord && showFx && <Confetti className="z-10" />}
 
-        <button
-          type="button"
-          data-cursor="link"
-          aria-expanded={flipped}
-          aria-pressed={flipped}
-          onClick={() => setFlipped((f) => !f)}
-          className="award-scene relative min-h-[18rem] w-full flex-1 rounded-[inherit] text-left"
-        >
-          <span
+        {/* Visual flip scene — decorative only. The real, list-structured
+            facts live in the back-face region and are toggled by the footer
+            button; keeping them out of the button preserves list semantics. */}
+        <div className="award-scene relative min-h-[18rem] w-full flex-1 rounded-[inherit]">
+          <div
             className={cn("award-inner block h-full w-full", reduced && "award-flat")}
             data-flipped={flipped}
           >
-            {/* Front face */}
-            <span
+            {/* Front face — decorative summary; the title is the sr-only <h3> */}
+            <div
               aria-hidden={flipped}
               className="award-face award-front relative flex h-full flex-col p-6"
             >
@@ -236,20 +230,23 @@ function AwardCard({ award, isWorldRecord, showFx }: AwardCardProps) {
                 <span className="flex min-w-0 items-center gap-2.5">
                   <span
                     aria-hidden
-                    className="glass-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-mono text-xs font-bold text-accent2"
+                    className="glass-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full font-mono text-xs font-bold text-accent2t"
                   >
                     {monogram(award.org)}
                   </span>
                   <span className="mono-chip truncate text-muted-fg">{award.org}</span>
                 </span>
-                <span className="mono-chip glass-1 shrink-0 rounded-full px-3 py-1 text-accent2">
+                <span className="mono-chip glass-1 shrink-0 rounded-full px-3 py-1 text-accent2t">
                   {award.year}
                 </span>
               </span>
 
               <span className="mb-3 flex items-start gap-3">
                 {isWorldRecord ? <MedalIcon /> : <TrophyIcon />}
-                <span className="font-display text-lg font-semibold leading-snug">
+                <span
+                  aria-hidden
+                  className="font-display text-lg font-semibold leading-snug"
+                >
                   {award.title}
                 </span>
               </span>
@@ -257,51 +254,55 @@ function AwardCard({ award, isWorldRecord, showFx }: AwardCardProps) {
               <span className="block text-sm leading-relaxed text-muted-fg">
                 {award.detail}
               </span>
+            </div>
 
-              <span
-                aria-hidden
-                className="mt-auto self-end pt-4 font-mono text-sm text-muted-fg"
-              >
-                ↻
-              </span>
-            </span>
-
-            {/* Back face — stays in DOM, revealed on flip (§134, §141) */}
-            <span
+            {/* Back face — real facts region, exposed to AT when flipped (§134, §141) */}
+            <div
+              id={factsId}
               aria-hidden={!flipped}
               className="award-face award-back absolute inset-0 flex flex-col overflow-hidden p-6"
             >
-              <span className="eyebrow mb-4 block">
+              <div className="eyebrow mb-4">
                 {award.year} · {award.org}
-              </span>
-              <span role="list" className="block space-y-2.5">
+              </div>
+              <ul className="space-y-2.5">
                 {award.back.map((fact) => (
-                  <span
-                    role="listitem"
+                  <li
                     key={fact}
                     className="flex items-start gap-2.5 text-sm leading-relaxed text-fg"
                   >
-                    <span aria-hidden className="mt-0.5 shrink-0 text-accent2">
+                    <span aria-hidden className="mt-0.5 shrink-0 text-accent2t">
                       ✦
                     </span>
                     {fact}
-                  </span>
+                  </li>
                 ))}
-              </span>
-              <span
-                aria-hidden
-                className="mt-auto self-end pt-4 font-mono text-sm text-muted-fg"
-              >
-                ↻
-              </span>
-            </span>
-          </span>
-        </button>
+              </ul>
+            </div>
+          </div>
+        </div>
 
-        {/* External link chip — placeholder rendered visibly, empty omitted (§135) */}
-        {award.link !== "" && (
-          <div className="relative px-6 pb-6">
-            {award.link === PLACEHOLDER_LINK ? (
+        {/* Footer: flip toggle (always present) + external-link chip (§135).
+            The toggle is the sole interactive control — aria-expanded/-controls
+            reference the facts region so its <ul>/<li> semantics survive. */}
+        <div className="relative flex flex-wrap items-center gap-3 px-6 pb-6">
+          <button
+            type="button"
+            data-cursor="link"
+            aria-expanded={flipped}
+            aria-controls={factsId}
+            aria-label={`${flipped ? "Hide" : "Show"} details for ${award.title}`}
+            onClick={() => setFlipped((f) => !f)}
+            className="award-flip-btn mono-chip glass-1 inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-muted-fg"
+          >
+            <span aria-hidden className="text-accent2t">
+              ↻
+            </span>
+            {flipped ? "Hide details" : "Show details"}
+          </button>
+
+          {award.link !== "" &&
+            (award.link === PLACEHOLDER_LINK ? (
               <span className="mono-chip inline-flex min-h-11 items-center rounded-full border border-dashed border-[var(--glass-border)] px-4 text-muted-fg">
                 {PLACEHOLDER_LINK}
               </span>
@@ -312,14 +313,13 @@ function AwardCard({ award, isWorldRecord, showFx }: AwardCardProps) {
                 rel="noopener noreferrer"
                 data-cursor="link"
                 aria-label={`${award.title} — ${award.org} (external link)`}
-                className="mono-chip glass-1 inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-accent2"
+                className="mono-chip glass-1 inline-flex min-h-11 items-center gap-1.5 rounded-full px-4 text-accent2t"
               >
                 {award.org}
                 <span aria-hidden>↗</span>
               </a>
-            )}
-          </div>
-        )}
+            ))}
+        </div>
       </GlassCard>
     </article>
   );
@@ -356,7 +356,7 @@ export function AwardsSection() {
     <section
       id="awards"
       ref={sectionRef}
-      aria-labelledby="awards-heading"
+      aria-label={sectionCopy.awards.heading}
       className="relative py-[var(--section-pad)]"
     >
       <style>{awardsCss}</style>
@@ -376,13 +376,13 @@ export function AwardsSection() {
           className="mb-12 border-y border-[var(--glass-border)] py-3 md:mb-16"
           aria-label="Achievement highlights"
         >
-          {ACHIEVEMENT_TICKER.map((item) => (
+          {awardsTicker.map((item) => (
             <span
               key={item}
               className="mono-chip mx-6 flex items-center gap-12 whitespace-nowrap text-muted-fg"
             >
               {item}
-              <span aria-hidden className="text-accent2">
+              <span aria-hidden className="text-accent2t">
                 ✦
               </span>
             </span>

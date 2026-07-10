@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 
 interface ToastItem {
   id: number;
@@ -24,8 +25,8 @@ const ToastContext = createContext<ToastApi>({ toast: () => {} });
 
 export const useToast = () => useContext(ToastContext);
 
-/** Checkmark that draws itself on entry (§155) */
-function DrawnCheck() {
+/** Checkmark that draws itself on entry (§155) — instant under reduced motion. */
+function DrawnCheck({ reduced }: { reduced: boolean }) {
   return (
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
       <motion.path
@@ -34,9 +35,13 @@ function DrawnCheck() {
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
-        initial={{ pathLength: 0 }}
+        initial={{ pathLength: reduced ? 1 : 0 }}
         animate={{ pathLength: 1 }}
-        transition={{ duration: 0.45, ease: "easeOut", delay: 0.15 }}
+        transition={
+          reduced
+            ? { duration: 0 }
+            : { duration: 0.45, ease: "easeOut", delay: 0.15 }
+        }
       />
     </svg>
   );
@@ -49,6 +54,7 @@ function DrawnCheck() {
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const idRef = useRef(0);
+  const reduced = useReducedMotionSafe();
 
   const dismiss = useCallback((id: number) => {
     setToasts((t) => t.filter((x) => x.id !== id));
@@ -74,11 +80,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           {toasts.map((t) => (
             <motion.div
               key={t.id}
-              layout
-              initial={{ opacity: 0, y: -16, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 60 }}
-              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+              // Reduced motion: opacity-only fade, no y/scale/x travel and no
+              // layout reflow motion. Drag-to-dismiss is user-initiated, so it
+              // stays live regardless.
+              layout={!reduced}
+              initial={reduced ? { opacity: 0 } : { opacity: 0, y: -16, scale: 0.96 }}
+              animate={reduced ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+              exit={reduced ? { opacity: 0 } : { opacity: 0, x: 60 }}
+              transition={
+                reduced
+                  ? { duration: 0.2 }
+                  : { duration: 0.35, ease: [0.22, 1, 0.36, 1] }
+              }
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
               dragElastic={0.6}
@@ -87,7 +100,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               }}
               className="glass-3 pointer-events-auto flex items-center gap-2.5 px-4 py-2.5 text-sm"
             >
-              {t.icon === "check" && <DrawnCheck />}
+              {t.icon === "check" && <DrawnCheck reduced={reduced} />}
               <span>{t.message}</span>
             </motion.div>
           ))}

@@ -14,6 +14,15 @@ import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 
 const MOTTO_INTERVAL_MS = 5200;
 
+/** Tiny navy (#0b0f1a) SVG so both polaroid photos blur-up rather than pop (§71). */
+const PHOTO_BLUR =
+  "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNiIgaGVpZ2h0PSIxMCI+PHJlY3Qgd2lkdGg9IjE2IiBoZWlnaHQ9IjEwIiBmaWxsPSIjMGIwZjFhIi8+PC9zdmc+";
+
+/** Cover zoom (§195): transform-only, inside the clipped frame, fine-pointer +
+ *  hover-capable only. Applied per photo when motion isn't reduced. */
+const ZOOM_CLASS =
+  "transition-transform duration-[600ms] ease-[var(--ease-out-soft)] [@media(hover:hover)_and_(pointer:fine)]:group-hover:scale-[1.05]";
+
 /**
  * Art direction (§152): two renditions of the same asset toggled per
  * breakpoint — mobile gets a tighter 4:5 crop aimed by object-position,
@@ -26,11 +35,13 @@ function ArtDirectedImage({
   alt,
   mobilePosition,
   desktopPosition,
+  zoom,
 }: {
   src: string;
   alt: string;
   mobilePosition: string;
   desktopPosition: string;
+  zoom: boolean;
 }) {
   return (
     <>
@@ -39,14 +50,18 @@ function ArtDirectedImage({
         alt={alt}
         fill
         sizes="(min-width: 480px) 26rem, 92vw"
-        className={cn("object-cover md:hidden", mobilePosition)}
+        placeholder="blur"
+        blurDataURL={PHOTO_BLUR}
+        className={cn("object-cover md:hidden", mobilePosition, zoom && ZOOM_CLASS)}
       />
       <Image
         src={src}
         alt={alt}
         fill
         sizes="26rem"
-        className={cn("hidden object-cover md:block", desktopPosition)}
+        placeholder="blur"
+        blurDataURL={PHOTO_BLUR}
+        className={cn("hidden object-cover md:block", desktopPosition, zoom && ZOOM_CLASS)}
       />
     </>
   );
@@ -179,7 +194,7 @@ export function Beyond() {
     <section
       ref={sectionRef}
       id="beyond"
-      aria-labelledby="beyond-heading"
+      aria-label={sectionCopy.beyond.heading}
       data-sparkle-zone=""
       className="relative py-[var(--section-pad)]"
     >
@@ -235,7 +250,7 @@ export function Beyond() {
             <Polaroid tilt={-1.4} hoverTilt={2} wobble={wobble}>
               <GlassCard tier={2} sheen className="h-full p-4 pb-6 md:p-5">
                 <figure>
-                  <div className="relative aspect-[4/5] overflow-hidden rounded-[0.6rem] md:aspect-[3/4]">
+                  <div className="group relative aspect-[4/5] overflow-hidden rounded-[0.6rem] md:aspect-[3/4]">
                     <SprocketStrip side="left" />
                     <SprocketStrip side="right" />
                     <ArtDirectedImage
@@ -243,6 +258,7 @@ export function Beyond() {
                       alt={videoEditing.title}
                       mobilePosition="object-[50%_35%]"
                       desktopPosition="object-center"
+                      zoom={!reduced}
                     />
                   </div>
 
@@ -296,7 +312,7 @@ export function Beyond() {
             <Polaroid tilt={1.4} hoverTilt={-2} wobble={wobble}>
               <GlassCard tier={2} sheen className="h-full p-4 pb-6 md:p-5">
                 <figure>
-                  <div className="relative aspect-[4/5] overflow-hidden rounded-[0.6rem] md:aspect-[3/4]">
+                  <div className="group relative aspect-[4/5] overflow-hidden rounded-[0.6rem] md:aspect-[3/4]">
                     {/* Bleed wrapper gives the parallax room to travel without exposing edges */}
                     <Parallax speed={0.16} className="absolute -inset-y-10 inset-x-0">
                       <ArtDirectedImage
@@ -304,6 +320,7 @@ export function Beyond() {
                         alt={trekking.title}
                         mobilePosition="object-[50%_25%]"
                         desktopPosition="object-center"
+                        zoom={!reduced}
                       />
                     </Parallax>
                   </div>

@@ -358,6 +358,8 @@ export const site = {
   description:
     "Mainframe Developer & Product Analyst in Bengaluru — COBOL, CICS, DB2 and release management, bridging z/OS with modern AI like IBM watsonx.ai.",
   version: "1.0.0",
+  /** Site launch date (ISO). Drives the anniversary console greeting (§284). */
+  launchedOn: "2026-07-10",
 };
 
 export const nav = [
@@ -430,7 +432,38 @@ export const sectionCopy = {
   },
 };
 
+/**
+ * Contact form microcopy (§153–170) — field labels, submit/status lines,
+ * validation messages, and the screen-reader new-tab hint. Kept here so the
+ * Contact component stays content-agnostic.
+ */
+export const contactCopy = {
+  form: {
+    name: "Name",
+    email: "Email",
+    message: "Message",
+    submit: "Send message",
+    sending: "Sending…",
+    sent: "Sent",
+    success: "Thanks — I'll reply within 24 hours.",
+    failure: "That didn't go through — your message is safe here. Try sending again?",
+  },
+  errors: {
+    name: "Please give me at least 2 characters.",
+    email: "That email doesn't look quite right.",
+    message: "Tell me a little more — 10 characters minimum.",
+  },
+  newTab: "(opens in new tab)",
+} as const;
+
 export const exploringNow = ["IBM watsonx.ai", "MCP", "Granite Code"];
+
+/** Achievements ticker above the awards grid (§138) — derived, never hard-coded */
+export const awardsTicker = awards.map((a) =>
+  a.year && a.year !== "—"
+    ? `${a.title.replace(/\s*—.*$/, "").replace(/\s*\(.*\)$/, "")} ${a.year}`
+    : a.title.replace(/^.*—\s*/, ""),
+);
 
 export const preloader = {
   words: ["COBOL", "JCL", "DB2", "PYTHON", "WATSONX.AI", "PORTFOLIO"],
@@ -464,6 +497,71 @@ export const usesPage = {
       items: ["ITIL4", "Git + GitHub", "Docker", "Azure"],
     },
   ],
+};
+
+/** Chrome for the hidden /uses page (§282) — eyebrow + back link. */
+export const usesChrome = {
+  eyebrow: "FOUND IT / USES",
+  back: "← Back to the portfolio",
+};
+
+/** The mainframe 404 — ABEND S0C4 (§285, §129). */
+export const notFoundCopy = {
+  eyebrow: "SYSTEM COMPLETION CODE",
+  /** Rendered as both the glitch heading and its data-text attribute. */
+  code: "ABEND S0C4",
+  body:
+    "Protection exception: this address does not exist in the portfolio's address space. The dataset you requested was never cataloged.",
+  home: "Take me home",
+};
+
+/** Glass error boundary copy — no white screens (§291). */
+export const errorCopy = {
+  eyebrow: "ABEND · UNEXPECTED",
+  heading: "Something broke.",
+  body: "The job abended mid-step. A refresh usually clears it.",
+  retry: "Try again",
+};
+
+/**
+ * Copy for the Konami "SAYAN/OS" terminal easter egg (§277–280) and the
+ * styled console greeting (§279, §182, §284). The date-aware `festive`
+ * greetings fire once per load; the anniversary one keys off `site.launchedOn`.
+ */
+export const terminalCopy = {
+  /** Section headings become dataset names in terminal mode (§278) */
+  datasetNames: {
+    about: "PORTFOLIO.ABOUT.PDS",
+    skills: "PORTFOLIO.SKILLS.PDS",
+    experience: "PORTFOLIO.WORK.HIST",
+    work: "PORTFOLIO.WORK.PDS",
+    awards: "PORTFOLIO.AWARDS.PDS",
+    beyond: "PORTFOLIO.HUMAN.PDS",
+    contact: "PORTFOLIO.CONTACT.PDS",
+  } as Record<string, string>,
+  asciiBanner: String.raw`
+  ███████╗ █████╗ ██╗   ██╗ █████╗ ███╗   ██╗
+  ██╔════╝██╔══██╗╚██╗ ██╔╝██╔══██╗████╗  ██║
+  ███████╗███████║ ╚████╔╝ ███████║██╔██╗ ██║
+  ╚════██║██╔══██║  ╚██╔╝  ██╔══██║██║╚██╗██║
+  ███████║██║  ██║   ██║   ██║  ██║██║ ╚████║
+  ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═══╝  .EXE v1.0`,
+  /** Styled console.log lines shown once per load (§279, §182) */
+  console: {
+    hiring: `Hiring? → ${owner.email}  ·  ${owner.github}`,
+    konamiHint: "↑↑↓↓←→←→BA — you know what to do.",
+  },
+  /** Toasts when entering/leaving terminal mode (§277) */
+  toasts: {
+    enter: "WELCOME TO SAYAN/OS — F3 TO EXIT",
+    exit: "SAYAN/OS SESSION ENDED — RC=0",
+  },
+  /** Date-aware console greetings (§284) */
+  festive: {
+    newYear: "🎆 Happy New Year from SAYAN.OS!",
+    diwali: "🪔 Shubho Diwali from SAYAN.OS!",
+    anniversary: "🎂 Happy anniversary from SAYAN.OS!",
+  },
 };
 
 export const media = {

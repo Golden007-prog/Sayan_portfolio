@@ -20,18 +20,24 @@ export interface RevealProps {
   id?: string;
 }
 
+/**
+ * `opacity`, never GSAP's `autoAlpha`. autoAlpha also sets
+ * `visibility: hidden`, which strips the element from the accessibility tree —
+ * that silently hid every section heading from screen readers and broke
+ * heading order until the element scrolled into view.
+ */
 const FROM: Record<RevealVariant, gsap.TweenVars> = {
-  "fade-up": { autoAlpha: 0, y: 48 },
-  mask: { autoAlpha: 0, y: 32, clipPath: "inset(0 0 100% 0)" },
-  blur: { autoAlpha: 0, filter: "blur(12px)" },
-  scale: { autoAlpha: 0, scale: 0.94 },
+  "fade-up": { opacity: 0, y: 48 },
+  mask: { opacity: 0, y: 32, clipPath: "inset(0 0 100% 0)" },
+  blur: { opacity: 0, filter: "blur(12px)" },
+  scale: { opacity: 0, scale: 0.94 },
 };
 
 const TO: Record<RevealVariant, gsap.TweenVars> = {
-  "fade-up": { autoAlpha: 1, y: 0 },
-  mask: { autoAlpha: 1, y: 0, clipPath: "inset(0 0 -5% 0)" },
-  blur: { autoAlpha: 1, filter: "blur(0px)" },
-  scale: { autoAlpha: 1, scale: 1 },
+  "fade-up": { opacity: 1, y: 0 },
+  mask: { opacity: 1, y: 0, clipPath: "inset(0 0 -5% 0)" },
+  blur: { opacity: 1, filter: "blur(0px)" },
+  scale: { opacity: 1, scale: 1 },
 };
 
 /**
@@ -61,7 +67,7 @@ export function Reveal({
 
     const ctx = gsap.context(() => {
       if (reduced) {
-        gsap.set(targets, { autoAlpha: 1, clearProps: "transform,filter,clipPath" });
+        gsap.set(targets, { opacity: 1, clearProps: "transform,filter,clipPath" });
         return;
       }
       gsap.fromTo(

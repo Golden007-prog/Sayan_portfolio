@@ -9,7 +9,7 @@ import {
   useSyncExternalStore,
   type CSSProperties,
 } from "react";
-import { gsap } from "@/lib/gsap";
+import { gsap, ScrollTrigger } from "@/lib/gsap";
 import { cn } from "@/lib/cn";
 import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 import { useSmoothScroll } from "@/components/providers/SmoothScroll";
@@ -58,23 +58,77 @@ export function Hero() {
   const { scrollTo } = useSmoothScroll();
   const saveData = useSyncExternalStore(subscribeNever, getSaveData, () => false);
   const [scrolled, setScrolled] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
 
-  const showVideo = !reduced && !saveData;
+  /*
+   * The 300KB loop competes with LCP on a throttled phone, so the poster is
+   * the hero's first paint and the video only mounts once the page is idle —
+   * and never on narrow viewports, where the poster reads identically.
+   */
+  useEffect(() => {
+    if (reduced || saveData) return;
+    if (!window.matchMedia("(min-width: 768px)").matches) return;
 
-  // Pause the loop when the tab is hidden, resume when visible (§50).
+    let idle = 0;
+    const arm = () => {
+      const ric = window.requestIdleCallback;
+      idle = ric
+        ? ric(() => setVideoReady(true), { timeout: 2500 })
+        : window.setTimeout(() => setVideoReady(true), 1200);
+    };
+    if (document.readyState === "complete") arm();
+    else window.addEventListener("load", arm, { once: true });
+
+    return () => {
+      window.removeEventListener("load", arm);
+      if (!idle) return;
+      if (window.cancelIdleCallback) window.cancelIdleCallback(idle);
+      else window.clearTimeout(idle);
+    };
+  }, [reduced, saveData]);
+
+  const showVideo = !reduced && !saveData && videoReady;
+
+  // Play only while the tab is visible AND the hero is on-screen; pause
+  // otherwise so the decoder isn't churning off-screen all session (§50).
+  // The effect only runs when a <video> exists (showVideo), so the
+  // reduced-motion / saveData poster path never gets resumed here.
   // Also re-assert muted: React can drop the attribute in SSR markup,
   // and autoplay only succeeds while muted.
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
+    const section = sectionRef.current;
     video.muted = true;
-    if (!document.hidden) video.play().catch(() => {});
-    const onVisibility = () => {
-      if (document.hidden) video.pause();
-      else video.play().catch(() => {});
+
+    let onScreen = true; // assume visible until the observer reports otherwise
+
+    const sync = () => {
+      if (!document.hidden && onScreen) video.play().catch(() => {});
+      else video.pause();
     };
+
+    const onVisibility = () => sync();
     document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
+
+    let observer: IntersectionObserver | undefined;
+    if (section && typeof IntersectionObserver !== "undefined") {
+      observer = new IntersectionObserver(
+        (entries) => {
+          onScreen = entries[0]?.isIntersecting ?? true;
+          sync();
+        },
+        { threshold: 0 },
+      );
+      observer.observe(section);
+    }
+
+    sync();
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      observer?.disconnect();
+    };
   }, [showVideo]);
 
   // Scroll indicator fades out permanently after the first scroll (§46)
@@ -97,32 +151,43 @@ export function Hero() {
     const ctx = gsap.context(() => {
       if (reduced) {
         gsap.set("[data-hero-reveal], [data-hero-letter]", {
-          autoAlpha: 1,
+          opacity: 1,
           clearProps: "transform,filter,clipPath",
         });
         return;
       }
 
+      // opacity, never autoAlpha: autoAlpha's `visibility: hidden` would drop
+      // the h1 out of the accessibility tree for the whole intro.
       // — Initial hidden states (explicit sets so nothing pops in early)
-      gsap.set('[data-hero-reveal="eyebrow"]', { autoAlpha: 0, y: 24 });
+      gsap.set('[data-hero-reveal="eyebrow"]', { opacity: 0, y: 24 });
       gsap.set("[data-hero-letter]", {
-        autoAlpha: 0,
+        opacity: 0,
         yPercent: 55,
         clipPath: "inset(0 0 100% 0)",
+        willChange: "transform",
       });
-      gsap.set('[data-hero-reveal="ticker"]', { autoAlpha: 0, y: 20 });
-      gsap.set('[data-hero-reveal="intro"]', { autoAlpha: 0, filter: "blur(12px)" });
-      gsap.set('[data-hero-reveal="row"]', { autoAlpha: 0, y: 28 });
-      gsap.set('[data-hero-reveal="stat"]', { autoAlpha: 0, y: 24 });
-      gsap.set('[data-hero-reveal="chips"]', { autoAlpha: 0 });
+      gsap.set('[data-hero-reveal="ticker"]', { opacity: 0, y: 20 });
+      gsap.set('[data-hero-reveal="intro"]', { opacity: 0, filter: "blur(12px)" });
+      gsap.set('[data-hero-reveal="row"]', { opacity: 0, y: 28 });
+      gsap.set('[data-hero-reveal="stat"]', { opacity: 0, y: 24 });
+      gsap.set('[data-hero-reveal="chips"]', { opacity: 0 });
 
       // — Intro: per-letter clip-path rise, ~30ms stagger (§40), blur intro (§42)
-      const tl = gsap.timeline({ paused: true, defaults: { ease: "power4.out" } });
-      tl.to('[data-hero-reveal="eyebrow"]', { autoAlpha: 1, y: 0, duration: 0.7 })
+      const tl = gsap.timeline({
+        paused: true,
+        defaults: { ease: "power4.out" },
+        // Release the per-letter compositor layers once the one-shot intro
+        // is done — otherwise will-change pins a layer per letter all session.
+        onComplete: () => {
+          gsap.set("[data-hero-letter]", { clearProps: "willChange" });
+        },
+      });
+      tl.to('[data-hero-reveal="eyebrow"]', { opacity: 1, y: 0, duration: 0.7 })
         .to(
           "[data-hero-letter]",
           {
-            autoAlpha: 1,
+            opacity: 1,
             yPercent: 0,
             clipPath: "inset(0 0 -12% 0)",
             duration: 0.9,
@@ -130,23 +195,23 @@ export function Hero() {
           },
           "-=0.45",
         )
-        .to('[data-hero-reveal="ticker"]', { autoAlpha: 1, y: 0, duration: 0.7 }, "-=0.55")
+        .to('[data-hero-reveal="ticker"]', { opacity: 1, y: 0, duration: 0.7 }, "-=0.55")
         .to(
           '[data-hero-reveal="intro"]',
-          { autoAlpha: 1, filter: "blur(0px)", duration: 0.9 },
+          { opacity: 1, filter: "blur(0px)", duration: 0.9 },
           "-=0.5",
         )
         .to(
           '[data-hero-reveal="row"]',
-          { autoAlpha: 1, y: 0, duration: 0.8, stagger: 0.08 },
+          { opacity: 1, y: 0, duration: 0.8, stagger: 0.08 },
           "-=0.55",
         )
         .to(
           '[data-hero-reveal="stat"]',
-          { autoAlpha: 1, y: 0, duration: 0.7, stagger: 0.06 },
+          { opacity: 1, y: 0, duration: 0.7, stagger: 0.06 },
           "-=0.5",
         )
-        .to('[data-hero-reveal="chips"]', { autoAlpha: 1, duration: 0.9 }, "-=0.6");
+        .to('[data-hero-reveal="chips"]', { opacity: 1, duration: 0.9 }, "-=0.6");
 
       // — Chain to the preloader (§6): event, or immediately if already done
       let started = false;
@@ -199,23 +264,41 @@ export function Hero() {
       }
 
       // — Each chip gets its own slow drift loop (§45)
-      gsap.utils.toArray<HTMLElement>("[data-hero-chip]").forEach((chip, i) => {
-        gsap.to(chip, {
-          y: i % 2 === 0 ? 12 : -12,
-          x: i % 2 === 0 ? -6 : 6,
-          rotation: i % 2 === 0 ? -2.5 : 2.5,
-          duration: 5 + i * 1.1,
-          delay: i * 0.35,
-          ease: "sine.inOut",
-          yoyo: true,
-          repeat: -1,
+      const chipTweens = gsap.utils
+        .toArray<HTMLElement>("[data-hero-chip]")
+        .map((chip, i) =>
+          gsap.to(chip, {
+            y: i % 2 === 0 ? 12 : -12,
+            x: i % 2 === 0 ? -6 : 6,
+            rotation: i % 2 === 0 ? -2.5 : 2.5,
+            duration: 5 + i * 1.1,
+            delay: i * 0.35,
+            ease: "sine.inOut",
+            yoyo: true,
+            repeat: -1,
+          }),
+        );
+
+      // Stop the infinite drift loops running the compositor once the hero
+      // scrolls out of view; resume when it returns.
+      if (chipTweens.length > 0) {
+        ScrollTrigger.create({
+          trigger: section,
+          start: "top bottom",
+          end: "bottom top",
+          onToggle: (self) => {
+            for (const tween of chipTweens) {
+              if (self.isActive) tween.play();
+              else tween.pause();
+            }
+          },
         });
-      });
+      }
 
       // — Scroll-out: scale to 0.94 + fade, scrubbed (§51 — allowed scrub scene)
       gsap.to("[data-hero-content]", {
         scale: 0.94,
-        autoAlpha: 0,
+        opacity: 0,
         ease: "none",
         scrollTrigger: {
           trigger: section,
@@ -236,7 +319,7 @@ export function Hero() {
     <section
       ref={sectionRef}
       id="home"
-      aria-labelledby="hero-heading"
+      aria-label={owner.name}
       data-konami-zone=""
       className="relative flex min-h-[100svh] flex-col overflow-hidden"
     >
@@ -258,7 +341,12 @@ export function Hero() {
             <source src={media.heroVideoMp4} type="video/mp4" />
           </video>
         ) : (
-          /* Reduced motion / data-saver: static poster instead (§50, §56) */
+          /* Reduced motion / data-saver: static poster instead (§50, §56).
+             `unoptimized` so this resolves to the exact same URL as the
+             <video> poster attr — a video-capable client that first paints
+             this fallback (reduced defaults true pre-hydration) then swaps to
+             the video reuses the cached poster instead of fetching a second,
+             differently-optimized URL. */
           <Image
             src={media.heroPoster}
             alt=""
@@ -266,6 +354,7 @@ export function Hero() {
             sizes="100vw"
             loading="eager"
             fetchPriority="high"
+            unoptimized
             className="object-cover"
           />
         )}
@@ -324,7 +413,7 @@ export function Hero() {
                     <span
                       key={`${letter}-${li}`}
                       data-hero-letter
-                      className="inline-block will-change-transform"
+                      className="inline-block"
                     >
                       {letter}
                     </span>

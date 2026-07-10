@@ -94,6 +94,7 @@ export async function RepoCards() {
                   {repo.language}
                 </span>
               )}
+              <span className="sr-only">(opens in new tab)</span>
             </a>
           </li>
         ))}

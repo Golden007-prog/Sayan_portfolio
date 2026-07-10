@@ -2,10 +2,12 @@
 
 import { useEffect, useRef } from "react";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
+import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 
 /** 2px gradient scroll-progress bar fixed to the viewport top (§184). */
 export function ScrollProgressBar() {
   const ref = useRef<HTMLDivElement>(null);
+  const reduced = useReducedMotionSafe();
 
   useEffect(() => {
     const el = ref.current;
@@ -17,13 +19,16 @@ export function ScrollProgressBar() {
         scrollTrigger: {
           start: 0,
           end: () => document.documentElement.scrollHeight - window.innerHeight,
-          scrub: 0.3,
+          // Scroll-linked progress isn't "motion" in the WCAG sense, so the bar
+          // stays live; but reduced motion drops the smoothing lag (scrub: true
+          // tracks scroll position directly instead of easing toward it).
+          scrub: reduced ? true : 0.3,
         },
       });
     });
     ScrollTrigger.refresh();
     return () => ctx.revert();
-  }, []);
+  }, [reduced]);
 
   return (
     <div

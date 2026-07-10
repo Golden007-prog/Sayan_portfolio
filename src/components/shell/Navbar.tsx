@@ -130,12 +130,17 @@ export function Navbar() {
         )}
       >
         {/* hover-flip stays behind a fine-pointer gate (§21, rule 7) */}
-        <style>{`@media (hover: hover) and (pointer: fine) { .nav-logo:hover .nav-logo-flip { transform: rotateY(180deg); } }`}</style>
+        <style>{`.nav-logo-back::after { content: "サ"; } @media (hover: hover) and (pointer: fine) { .nav-logo:hover .nav-logo-flip { transform: rotateY(180deg); } }`}</style>
         <nav
           aria-label="Primary"
-          className="border-b border-[var(--glass-border)] shadow-[inset_0_1px_0_var(--glass-highlight)]"
+          className="safe-top border-b border-[var(--glass-border)] shadow-[inset_0_1px_0_var(--glass-highlight)]"
           style={{
-            height: compressed ? "var(--nav-h-compressed)" : "var(--nav-h)",
+            // Grow the bar under the notch by the inset and pad the content down
+            // by the same amount (.safe-top). env() is 0 without a notch, so the
+            // height transition below is unchanged on non-notched devices (§270).
+            height: compressed
+              ? "calc(var(--nav-h-compressed) + env(safe-area-inset-top))"
+              : "calc(var(--nav-h) + env(safe-area-inset-top))",
             background: compressed ? "var(--glass-bg-3)" : "var(--glass-bg-1)",
             backdropFilter: compressed
               ? "blur(26px) saturate(170%)"
@@ -143,8 +148,10 @@ export function Navbar() {
             WebkitBackdropFilter: compressed
               ? "blur(26px) saturate(170%)"
               : "blur(14px) saturate(150%)",
+            // Blur radius swaps discretely — transitioning backdrop-filter
+            // forces a non-compositable re-blur of the whole bar every frame.
             transition:
-              "height 0.4s var(--ease-out-soft), background-color 0.4s var(--ease-out-soft), backdrop-filter 0.4s var(--ease-out-soft)",
+              "height 0.4s var(--ease-out-soft), background-color 0.4s var(--ease-out-soft)",
           }}
         >
           <div className="container-site flex h-full items-center justify-between gap-3">
@@ -152,7 +159,9 @@ export function Navbar() {
               <button
                 type="button"
                 onClick={onLogoClick}
-                aria-label="Back to top"
+                // Starts with the visible "SC" so the accessible name contains
+                // the visible label a speech-control user would say.
+                aria-label={`${initials} — back to top`}
                 data-cursor="link"
                 className="nav-logo relative flex h-11 w-11 shrink-0 items-center justify-center [perspective:600px]"
               >
@@ -169,12 +178,13 @@ export function Navbar() {
                     <span className="absolute inset-0 flex items-center justify-center font-display text-lg font-bold tracking-tight [backface-visibility:hidden]">
                       {initials}
                     </span>
+                    {/* The glyph is drawn by CSS, not a text node: as DOM text
+                        it counted as the button's visible label and could never
+                        match the accessible name (WCAG 2.5.3). */}
                     <span
                       aria-hidden
-                      className="absolute inset-0 flex items-center justify-center font-display text-lg font-bold text-accent2 [backface-visibility:hidden] [transform:rotateY(180deg)]"
-                    >
-                      サ
-                    </span>
+                      className="nav-logo-back absolute inset-0 flex items-center justify-center font-display text-lg font-bold text-accent2t [backface-visibility:hidden] [transform:rotateY(180deg)]"
+                    />
                   </span>
                 </motion.span>
               </button>
@@ -220,7 +230,7 @@ export function Navbar() {
                     key={s.label}
                     href={s.href}
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel="me noopener noreferrer"
                     aria-label={`${s.label} — opens in new tab`}
                     data-cursor="link"
                     className="glass-1 flex h-11 w-11 items-center justify-center rounded-full text-muted-fg transition-[transform,box-shadow,color] duration-300 ease-[var(--ease-out-soft)] hover:-translate-y-0.5 hover:text-fg hover:shadow-[0_8px_28px_rgba(34,211,238,0.28)]"

@@ -267,12 +267,14 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       );
       return;
     }
-    if (e.key === "Home") {
+    // Home/End belong to the textbox caret (APG editable combobox pattern);
+    // Ctrl/Cmd+Home/End optionally jump to the first/last option instead.
+    if (e.key === "Home" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       setActiveIndex(0);
       return;
     }
-    if (e.key === "End") {
+    if (e.key === "End" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       setActiveIndex(Math.max(results.length - 1, 0));
       return;
@@ -367,7 +369,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
                 aria-hidden
                 className={cn(
                   "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-[var(--glass-border)]",
-                  i === active && "text-accent2",
+                  i === active && "text-accent2t",
                 )}
               >
                 {item.icon}

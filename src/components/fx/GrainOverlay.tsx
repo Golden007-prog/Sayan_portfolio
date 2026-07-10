@@ -11,7 +11,9 @@ export function GrainOverlay() {
     <div
       aria-hidden
       data-fx-layer
-      className="pointer-events-none fixed inset-0 z-[5]"
+      /* Above the aurora (-z-10), below content (§3.5 layer order) — so grain
+         textures the ambient backdrop without sitting on top of text. */
+      className="pointer-events-none fixed inset-0 -z-[5]"
       style={{
         backgroundImage: `url("data:image/svg+xml,${GRAIN_SVG}")`,
         backgroundRepeat: "repeat",

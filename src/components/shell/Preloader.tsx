@@ -17,6 +17,13 @@ export const PRELOADER_DONE_EVENT = "preloader:done";
 
 const SESSION_KEY = "preloaded";
 const MIN_DISPLAY_MS = 1200;
+
+/** Data-saver probe; the connection API is not in the TS DOM lib yet (§56). */
+const getSaveData = () =>
+  Boolean(
+    (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
+      ?.saveData,
+  );
 const SKIP_AFTER_MS = 4000;
 /** Not a progress driver — only a rescue hatch if a source stalls on a dead CDN. */
 const FAILSAFE_MS = 10000;
@@ -219,15 +226,32 @@ export function Preloader() {
       markLoaded(WEIGHTS.poster);
     }
 
-    const video = document.createElement("video");
-    video.muted = true;
-    video.preload = "metadata";
+    /*
+     * The hero only mounts its loop on wide viewports with motion and data
+     * allowed. Everywhere else there is no video to wait for, so counting its
+     * weight immediately keeps the loader off the critical path instead of
+     * blocking the first paint on an asset that will never be requested.
+     */
+    const heroWillPlayVideo =
+      !reducedRef.current &&
+      !getSaveData() &&
+      window.matchMedia("(min-width: 768px)").matches;
+
+    let video: HTMLVideoElement | null = null;
     const onVideoSettled = () => markLoaded(WEIGHTS.video);
-    video.addEventListener("loadedmetadata", onVideoSettled);
-    video.addEventListener("error", onVideoSettled);
-    video.src = video.canPlayType("video/webm")
-      ? media.heroVideoWebm
-      : media.heroVideoMp4;
+
+    if (!heroWillPlayVideo) {
+      markLoaded(WEIGHTS.video);
+    } else {
+      video = document.createElement("video");
+      video.muted = true;
+      video.preload = "metadata";
+      video.addEventListener("loadedmetadata", onVideoSettled);
+      video.addEventListener("error", onVideoSettled);
+      video.src = video.canPlayType("video/webm")
+        ? media.heroVideoWebm
+        : media.heroVideoMp4;
+    }
 
     // rescue hatch: a stalled network must never trap the visitor behind glass
     timers.push(
@@ -244,9 +268,11 @@ export function Preloader() {
       timers.forEach((t) => window.clearTimeout(t));
       img.removeEventListener("load", onImgSettled);
       img.removeEventListener("error", onImgSettled);
-      video.removeEventListener("loadedmetadata", onVideoSettled);
-      video.removeEventListener("error", onVideoSettled);
-      video.removeAttribute("src");
+      if (video) {
+        video.removeEventListener("loadedmetadata", onVideoSettled);
+        video.removeEventListener("error", onVideoSettled);
+        video.removeAttribute("src");
+      }
       ctx.revert();
     };
   }, [active, finish]);

@@ -11,7 +11,13 @@
  * All three are exported from "@/components/work/RepoCards".
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FocusEvent,
+} from "react";
 import { motion } from "framer-motion";
 import { ArrowUpRight, GitFork, Star } from "lucide-react";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
@@ -21,6 +27,7 @@ import { GlassCard } from "@/components/primitives/GlassCard";
 import { Parallax } from "@/components/primitives/Parallax";
 import { SectionHeading } from "@/components/primitives/SectionHeading";
 import { ProjectCard } from "@/components/work/ProjectCard";
+import { useSmoothScroll } from "@/components/providers/SmoothScroll";
 import { cn } from "@/lib/cn";
 
 /** Desktop pinned scene requires width + a fine hover pointer (§109). */
@@ -50,7 +57,8 @@ function MoreOnGitHubCard({ className }: { className?: string }) {
       target="_blank"
       rel="noopener noreferrer"
       data-cursor="link"
-      aria-label={`More on GitHub — @${owner.githubUser}`}
+      // Named by its own visible text; an aria-label here would omit the
+      // visible URL line and trip WCAG 2.5.3 (label in name).
       className={cn("group block rounded-[var(--radius-glass)]", className)}
     >
       <GlassCard
@@ -62,7 +70,7 @@ function MoreOnGitHubCard({ className }: { className?: string }) {
         <span aria-hidden className="flex items-center gap-3">
           <motion.span
             animate={float(0)}
-            className="glass-1 flex h-12 w-12 items-center justify-center rounded-full text-accent2"
+            className="glass-1 flex h-12 w-12 items-center justify-center rounded-full text-accent2t"
           >
             <Star className="h-5 w-5" />
           </motion.span>
@@ -81,6 +89,7 @@ function MoreOnGitHubCard({ className }: { className?: string }) {
           {owner.github.replace("https://", "")}
           <ArrowUpRight className="h-4 w-4 transition-transform duration-500 ease-soft group-hover:-rotate-45" />
         </span>
+        <span className="sr-only">(opens in new tab)</span>
       </GlassCard>
     </a>
   );
@@ -95,6 +104,7 @@ function MoreOnGitHubCard({ className }: { className?: string }) {
  */
 export function WorkGallery() {
   const reduced = useReducedMotionSafe();
+  const { scrollTo } = useSmoothScroll();
   const [pinnedMode, setPinnedMode] = useState(false);
   const [activeDot, setActiveDot] = useState(0);
 
@@ -103,6 +113,7 @@ export function WorkGallery() {
   const barRef = useRef<HTMLDivElement>(null);
   const scrollerRef = useRef<HTMLDivElement>(null);
   const dotRafRef = useRef(0);
+  const stRef = useRef<InstanceType<typeof ScrollTrigger> | null>(null);
 
   // Derived from data, not hard-coded: "03 / SELECTED WORK" → "SELECTED WORK"
   const outlineText =
@@ -130,7 +141,7 @@ export function WorkGallery() {
     const ctx = gsap.context(() => {
       const distance = () =>
         Math.max(track.scrollWidth - window.innerWidth, 0);
-      gsap.to(track, {
+      const tween = gsap.to(track, {
         xPercent: () => (-100 * distance()) / track.scrollWidth,
         ease: "none",
         scrollTrigger: {
@@ -148,15 +159,39 @@ export function WorkGallery() {
           },
         },
       });
+      // Keep a handle so keyboard focus can drive the pin's scroll (§109 a11y).
+      stRef.current = tween.scrollTrigger ?? null;
     }, stage);
 
     // Mode flips after hydration change page height — re-measure everything.
     const raf = requestAnimationFrame(() => ScrollTrigger.refresh());
     return () => {
       cancelAnimationFrame(raf);
+      stRef.current = null;
       ctx.revert();
     };
   }, [pinnedMode]);
+
+  /*
+   * a11y: the track is transform-scrubbed inside an overflow-hidden stage, so
+   * an off-screen card that receives keyboard focus cannot be scrolled into
+   * view natively. Translate the focused card's position along the track into
+   * the matching document scroll offset and drive Lenis there, centering it.
+   */
+  const onPinnedFocus = useCallback(
+    (e: FocusEvent<HTMLDivElement>) => {
+      const st = stRef.current;
+      if (!st || e.target === e.currentTarget) return;
+      const range = st.end - st.start;
+      if (range <= 0) return;
+      const rect = (e.target as HTMLElement).getBoundingClientRect();
+      const cardCenter = rect.left + rect.width / 2;
+      const delta = (cardCenter - window.innerWidth / 2) / range;
+      const progress = Math.min(1, Math.max(0, st.progress + delta));
+      scrollTo(st.start + progress * range, { immediate: true });
+    },
+    [scrollTo],
+  );
 
   /* Carousel: sync progress dots to the nearest-centered card (§124) */
   const syncDots = useCallback(() => {
@@ -194,7 +229,7 @@ export function WorkGallery() {
   return (
     <section
       id="work"
-      aria-labelledby="work-heading"
+      aria-label={sectionCopy.work.heading}
       className="relative py-[var(--section-pad)]"
     >
       <div className="container-site">
@@ -231,6 +266,7 @@ export function WorkGallery() {
         >
           <div
             ref={trackRef}
+            onFocus={onPinnedFocus}
             className="flex w-max items-stretch gap-8 px-[var(--gutter)] will-change-transform"
           >
             {projects.map((project, i) => (

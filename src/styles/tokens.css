@@ -14,12 +14,26 @@
   --text: #f4f6fb;
   --text-muted: #9aa3b5;
 
-  /* Brand */
+  /* Brand — vivid values, for glows, borders, fills and large display type */
   --accent-1: #7c5cff;
   --accent-2: #22d3ee;
   --accent-3: #f472b6;
   --accent-4: #34d399;
   --gradient: linear-gradient(135deg, #7c5cff 0%, #22d3ee 100%);
+
+  /*
+   * Text-safe accents. On the near-black dark surface the vivid values
+   * already clear 4.5:1, so these alias them. The .light block re-tunes
+   * them because the vivid cyan/pink/green drop to 1.7–2.5:1 on #f6f7fb.
+   * Rule: accent COLOR for decoration, accent TEXT for anything readable.
+   */
+  --accent-1-text: #7c5cff;
+  --accent-2-text: #22d3ee;
+  --accent-3-text: #f472b6;
+  --accent-4-text: #34d399;
+  --gradient-text: linear-gradient(135deg, #7c5cff 0%, #22d3ee 100%);
+  /* Solid fill that white text can sit on at ≥4.5:1 in both themes */
+  --accent-solid: #5b3fd4;
 
   /* Glass */
   --glass-bg: rgba(255, 255, 255, 0.06);
@@ -57,6 +71,15 @@
   --glass-border: rgba(11, 15, 26, 0.1);
   --glass-highlight: rgba(255, 255, 255, 0.9);
   --shadow-glow: 0 8px 40px rgba(124, 92, 255, 0.12);
+
+  /* Darkened accents so accent-colored TEXT clears 4.5:1 on the light surface
+     (vivid cyan is 1.69:1, pink 2.47:1, green 1.80:1 — all failures). */
+  --accent-1-text: #5b3fd4; /* 6.31:1 */
+  --accent-2-text: #0b6f87; /* 5.39:1 */
+  --accent-3-text: #b02a68; /* 5.81:1 */
+  --accent-4-text: #0d7350; /* 5.47:1 */
+  --gradient-text: linear-gradient(135deg, #5b3fd4 0%, #0b6f87 100%);
+  --accent-solid: #5b3fd4;
 
   /* Heavier scrim keeps hero video text readable in light mode */
   --scrim: linear-gradient(
@@ -111,6 +134,12 @@
   --accent-3: #33ff66;
   --accent-4: #33ff66;
   --gradient: linear-gradient(135deg, #33ff66 0%, #66ffcc 100%);
+  --accent-1-text: #33ff66;
+  --accent-2-text: #66ffcc;
+  --accent-3-text: #33ff66;
+  --accent-4-text: #33ff66;
+  --gradient-text: linear-gradient(135deg, #33ff66 0%, #66ffcc 100%);
+  --accent-solid: #0a5f24;
   --glass-bg: rgba(51, 255, 102, 0.05);
   --glass-bg-1: rgba(51, 255, 102, 0.03);
   --glass-bg-3: rgba(51, 255, 102, 0.08);

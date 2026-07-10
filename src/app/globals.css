@@ -13,6 +13,11 @@
   --color-accent2: var(--accent-2);
   --color-accent3: var(--accent-3);
   --color-accent4: var(--accent-4);
+  /* text-accent1t … — use these whenever the accent carries readable text */
+  --color-accent1t: var(--accent-1-text);
+  --color-accent2t: var(--accent-2-text);
+  --color-accent3t: var(--accent-3-text);
+  --color-accent4t: var(--accent-4-text);
   --font-display: var(--font-space-grotesk);
   --font-body: var(--font-inter);
   --font-mono: var(--font-jetbrains-mono);
@@ -23,6 +28,15 @@
 
 html {
   scroll-behavior: smooth; /* Lenis takes over when JS runs */
+  /* §276 — themed tap flash, no grey box, no 300ms delay artifacts */
+  -webkit-tap-highlight-color: color-mix(in srgb, var(--accent-1) 22%, transparent);
+  /*
+   * Reserve the scrollbar gutter permanently. The preloader and the mobile
+   * menu lock scrolling with `overflow: hidden`, which removes the scrollbar
+   * and widens the viewport — re-centering the hero and costing ~0.075 CLS
+   * the moment the lock releases.
+   */
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -109,6 +123,10 @@ p { max-width: 65ch; }
   }
 }
 
+/* Containing block for GlassCard's cursor-following spotlight overlay,
+   which is absolutely positioned and would otherwise escape to an ancestor. */
+.glass-spotlight { position: relative; }
+
 /* Diagonal light-sheen sweep on hover */
 .glass-sheen { position: relative; overflow: hidden; }
 .glass-sheen::after {
@@ -176,8 +194,9 @@ p { max-width: 65ch; }
   color: var(--text-muted);
 }
 
+/* Uses --gradient-text, whose stops stay ≥4.5:1 on the active surface */
 .text-gradient {
-  background: var(--gradient);
+  background: var(--gradient-text);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

@@ -120,10 +120,11 @@ export function Footer() {
     const panel = panelRef.current;
     if (!panel) return;
 
-    const measure = () => {
+    const nextHeight = () => {
       const h = panel.offsetHeight;
-      setCurtainH(h > 0 && h <= window.innerHeight ? h : null);
+      return h > 0 && h <= window.innerHeight ? h : null;
     };
+    const measure = () => setCurtainH(nextHeight());
     const raf = requestAnimationFrame(measure);
 
     let ro: ResizeObserver | null = null;
@@ -131,11 +132,28 @@ export function Footer() {
       ro = new ResizeObserver(measure);
       ro.observe(panel);
     }
-    window.addEventListener("resize", measure);
+
+    /* The ResizeObserver only fires on panel-size changes; viewport-height
+       changes (window.innerHeight, compared above) need a resize listener.
+       rAF-throttle it to one layout read per frame and bail the state write
+       when the computed height is unchanged. */
+    let resizeRaf = 0;
+    const onResize = () => {
+      if (resizeRaf) return;
+      resizeRaf = requestAnimationFrame(() => {
+        resizeRaf = 0;
+        setCurtainH((prev) => {
+          const next = nextHeight();
+          return next === prev ? prev : next;
+        });
+      });
+    };
+    window.addEventListener("resize", onResize);
     return () => {
       cancelAnimationFrame(raf);
+      if (resizeRaf) cancelAnimationFrame(resizeRaf);
       ro?.disconnect();
-      window.removeEventListener("resize", measure);
+      window.removeEventListener("resize", onResize);
     };
   }, [reduced]);
 
@@ -179,9 +197,11 @@ export function Footer() {
   const firstName = owner.name.split(" ")[0];
 
   const socials = [
-    { label: "GitHub", href: owner.github, external: true },
-    { label: "LinkedIn", href: owner.linkedin, external: true },
-    { label: "Resume", href: owner.resumePdf, external: true },
+    // rel="me" marks the owner's own profiles for identity verification (§264);
+    // the résumé PDF is a document, not a profile, so it stays off.
+    { label: "GitHub", href: owner.github, external: true, me: true },
+    { label: "LinkedIn", href: owner.linkedin, external: true, me: true },
+    { label: "Resume", href: owner.resumePdf, external: true, me: false },
   ];
 
   return (
@@ -224,7 +244,10 @@ export function Footer() {
             </Marquee>
           </div>
 
-          <div className="container-site relative pb-8 pt-16 md:pt-20">
+          {/* safe-bottom keeps the bottom bar clear of the home indicator; it
+              lives on the panel's inner content (not the clip element), so the
+              panel's measured height still drives the curtain spacer (§270). */}
+          <div className="safe-bottom container-site relative pb-8 pt-16 md:pt-20">
             <h2 id="footer-heading" className="sr-only">
               Footer
             </h2>
@@ -321,7 +344,12 @@ export function Footer() {
                       <a
                         href={s.href}
                         {...(s.external
-                          ? { target: "_blank", rel: "noopener noreferrer" }
+                          ? {
+                              target: "_blank",
+                              rel: s.me
+                                ? "me noopener noreferrer"
+                                : "noopener noreferrer",
+                            }
                           : {})}
                         data-cursor="link"
                         className="link-underline inline-flex min-h-11 items-center gap-1 text-sm text-muted-fg transition-colors hover:text-fg"

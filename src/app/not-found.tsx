@@ -1,28 +1,25 @@
 import Link from "next/link";
 import { RunnerGame } from "@/components/fx/RunnerGame";
+import { notFoundCopy } from "@/content/data";
 
 /** ABEND S0C4 — the mainframe 404 (§285, §129). */
 export default function NotFound() {
   return (
     <main id="main" className="container-site flex min-h-svh flex-col items-center justify-center py-24 text-center">
-      <p className="eyebrow mb-6">SYSTEM COMPLETION CODE</p>
+      <p className="eyebrow mb-6">{notFoundCopy.eyebrow}</p>
       <h1
         className="glitch font-mono text-6xl font-bold md:text-8xl"
-        data-text="ABEND S0C4"
+        data-text={notFoundCopy.code}
       >
-        ABEND S0C4
+        {notFoundCopy.code}
       </h1>
-      <p className="mt-6 max-w-md text-muted-fg">
-        Protection exception: this address does not exist in the
-        portfolio&apos;s address space. The dataset you requested was never
-        cataloged.
-      </p>
+      <p className="mt-6 max-w-md text-muted-fg">{notFoundCopy.body}</p>
 
       <Link
         href="/"
         className="glass mt-10 inline-flex min-h-11 items-center rounded-full px-7 py-3 font-medium transition-transform hover:-translate-y-0.5"
       >
-        Take me home
+        {notFoundCopy.home}
       </Link>
 
       <RunnerGame />
@@ -34,12 +31,14 @@ export default function NotFound() {
           position: absolute; inset: 0;
           opacity: 0.75;
         }
+        /* These pseudo-layers restate the heading text on top of it, so they
+           must use the surface-aware accents or the glyphs wash out in light mode. */
         .glitch::before {
-          color: var(--accent-2);
+          color: var(--accent-2-text);
           animation: glitch-a 2.4s infinite steps(2, jump-none);
         }
         .glitch::after {
-          color: var(--accent-3);
+          color: var(--accent-3-text);
           animation: glitch-b 3.1s infinite steps(2, jump-none);
         }
         @keyframes glitch-a {

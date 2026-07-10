@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { usesPage } from "@/content/data";
+import { usesChrome, usesPage } from "@/content/data";
 
 export const metadata: Metadata = {
   title: "Uses",
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function UsesPage() {
   return (
     <main id="main" className="container-site py-28">
-      <p className="eyebrow mb-4">FOUND IT / USES</p>
+      <p className="eyebrow mb-4">{usesChrome.eyebrow}</p>
       <h1 className="mb-4 text-4xl md:text-6xl">{usesPage.title}</h1>
       <p className="mb-16 text-muted-fg">{usesPage.intro}</p>
 
@@ -24,7 +24,7 @@ export default function UsesPage() {
             <ul className="space-y-2.5">
               {group.items.map((item) => (
                 <li key={item} className="flex items-baseline gap-3">
-                  <span aria-hidden className="text-accent2">▸</span>
+                  <span aria-hidden className="text-accent2t">▸</span>
                   {item}
                 </li>
               ))}
@@ -37,7 +37,7 @@ export default function UsesPage() {
         href="/"
         className="link-underline mt-16 inline-block text-muted-fg hover:text-fg"
       >
-        ← Back to the portfolio
+        {usesChrome.back}
       </Link>
     </main>
   );

@@ -29,6 +29,8 @@ jobs:
       # @tailwindcss/oxide and sharp declare. `npm ci`'s strict tree check then
       # rejects the lockfile on Linux; a fresh resolve is correct here.
       - run: npm install --no-audit --no-fund
+      - run: npm run lint
+      - run: npm run contrast # fails the build if any token pair drops below WCAG AA
       - run: npm run build
         env:
           GITHUB_PAGES: "true" # basePath + NEXT_PUBLIC_BASE_PATH derive from this in next.config.ts

@@ -20,7 +20,7 @@ import {
   Phone,
   Send,
 } from "lucide-react";
-import { owner, sectionCopy } from "@/content/data";
+import { contactCopy, owner, sectionCopy } from "@/content/data";
 import { GlassCard } from "@/components/primitives/GlassCard";
 import { Reveal } from "@/components/primitives/Reveal";
 import { MagneticButton } from "@/components/primitives/MagneticButton";
@@ -28,35 +28,11 @@ import { useToast } from "@/components/providers/ToastProvider";
 import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 import { cn } from "@/lib/cn";
 
-/**
- * Component-level UI microcopy (labels, validation, status lines) — specified
- * by the build brief for this section. Site content still comes from
- * `@/content/data` (`owner`, `sectionCopy.contact`).
- */
-const COPY = {
-  form: {
-    name: "Name",
-    email: "Email",
-    message: "Message",
-    submit: "Send message",
-    sending: "Sending…",
-    sent: "Sent",
-    success: "Thanks — I'll reply within 24 hours.",
-    failure: "That didn't go through — your message is safe here. Try sending again?",
-  },
-  errors: {
-    name: "Please give me at least 2 characters.",
-    email: "That email doesn't look quite right.",
-    message: "Tell me a little more — 10 characters minimum.",
-  },
-  newTab: "(opens in new tab)",
-} as const;
-
 /** §158 — name ≥ 2 chars, valid email, message ≥ 10 chars. `company` is the honeypot (§161). */
 const contactSchema = z.object({
-  name: z.string().min(2, COPY.errors.name),
-  email: z.email(COPY.errors.email),
-  message: z.string().min(10, COPY.errors.message),
+  name: z.string().min(2, contactCopy.errors.name),
+  email: z.email(contactCopy.errors.email),
+  message: z.string().min(10, contactCopy.errors.message),
   company: z.string().optional(),
 });
 
@@ -93,7 +69,7 @@ const FIELD_LABEL_CLASS = cn(
   "pointer-events-none absolute left-4 top-6 origin-left text-muted-fg",
   "transition-[transform,color] duration-200 ease-[var(--ease-out-soft)]",
   // §157 — float up on focus OR when the field holds a value
-  "peer-focus:-translate-y-[1.15rem] peer-focus:scale-75 peer-focus:text-accent2",
+  "peer-focus:-translate-y-[1.15rem] peer-focus:scale-75 peer-focus:text-accent2t",
   "peer-[:not(:placeholder-shown)]:-translate-y-[1.15rem] peer-[:not(:placeholder-shown)]:scale-75",
 );
 
@@ -306,7 +282,7 @@ export function Contact() {
   return (
     <section
       id="contact"
-      aria-labelledby="contact-heading"
+      aria-label={sectionCopy.contact.heading}
       className="py-[var(--section-pad)]"
     >
       <div className="container-site">
@@ -393,10 +369,10 @@ export function Contact() {
                     {...register("name")}
                   />
                   <label htmlFor="contact-name" className={FIELD_LABEL_CLASS}>
-                    {COPY.form.name}
+                    {contactCopy.form.name}
                   </label>
                   {errors.name && (
-                    <p id="contact-name-error" className="mt-1.5 text-xs text-accent3">
+                    <p id="contact-name-error" className="mt-1.5 text-xs text-accent3t">
                       {errors.name.message}
                     </p>
                   )}
@@ -415,10 +391,10 @@ export function Contact() {
                     {...register("email")}
                   />
                   <label htmlFor="contact-email" className={FIELD_LABEL_CLASS}>
-                    {COPY.form.email}
+                    {contactCopy.form.email}
                   </label>
                   {errors.email && (
-                    <p id="contact-email-error" className="mt-1.5 text-xs text-accent3">
+                    <p id="contact-email-error" className="mt-1.5 text-xs text-accent3t">
                       {errors.email.message}
                     </p>
                   )}
@@ -441,10 +417,10 @@ export function Contact() {
                     }}
                   />
                   <label htmlFor="contact-message" className={FIELD_LABEL_CLASS}>
-                    {COPY.form.message}
+                    {contactCopy.form.message}
                   </label>
                   {errors.message && (
-                    <p id="contact-message-error" className="mt-1.5 text-xs text-accent3">
+                    <p id="contact-message-error" className="mt-1.5 text-xs text-accent3t">
                       {errors.message.message}
                     </p>
                   )}
@@ -512,23 +488,23 @@ export function Contact() {
                       </motion.span>
                     )}
                     {sending
-                      ? COPY.form.sending
+                      ? contactCopy.form.sending
                       : status === "success"
-                        ? COPY.form.sent
-                        : COPY.form.submit}
+                        ? contactCopy.form.sent
+                        : contactCopy.form.submit}
                   </span>
                 </button>
 
                 {/* §166–168 — polite live region: error summary, success, retry */}
                 <div aria-live="polite" className="min-h-6 text-sm">
                   {fieldErrorMessages.length > 0 && (
-                    <p className="text-accent3">{fieldErrorMessages.join(" ")}</p>
+                    <p className="text-accent3t">{fieldErrorMessages.join(" ")}</p>
                   )}
                   {status === "success" && (
-                    <p className="text-accent4">{COPY.form.success}</p>
+                    <p className="text-accent4t">{contactCopy.form.success}</p>
                   )}
                   {status === "error" && (
-                    <p className="text-accent3">{COPY.form.failure}</p>
+                    <p className="text-accent3t">{contactCopy.form.failure}</p>
                   )}
                 </div>
               </motion.form>
@@ -549,7 +525,7 @@ export function Contact() {
                       aria-label={`Copy ${label.toLowerCase()}: ${value}`}
                       className="group flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-3 text-left transition-colors duration-200 hover:bg-white/5 focus-visible:bg-white/5"
                     >
-                      <Icon aria-hidden className="h-4 w-4 shrink-0 text-accent2" />
+                      <Icon aria-hidden className="h-4 w-4 shrink-0 text-accent2t" />
                       <span className="text-sm md:text-base">{value}</span>
                       <Copy
                         aria-hidden
@@ -573,7 +549,7 @@ export function Contact() {
                   className="glass-1 glass-sheen group flex min-h-11 items-center justify-between gap-4 rounded-full px-7 py-5 text-lg font-medium tracking-tight transition-[transform,box-shadow] duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_48px_rgba(34,211,238,0.25)]"
                 >
                   {label}
-                  <span className="sr-only">{COPY.newTab}</span>
+                  <span className="sr-only">{contactCopy.newTab}</span>
                   <ArrowUpRight
                     aria-hidden
                     className="h-5 w-5 transition-transform duration-300 ease-[var(--ease-out-soft)] group-hover:-translate-y-1 group-hover:translate-x-1"

@@ -2,8 +2,9 @@
 
 import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
-import { useSyncExternalStore } from "react";
+import { useId, useSyncExternalStore } from "react";
 import { cn } from "@/lib/cn";
+import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 
 const noopSubscribe = () => () => {};
 
@@ -17,6 +18,10 @@ export function ThemeToggle({ className }: { className?: string }) {
   const { resolvedTheme, setTheme } = useTheme();
   // true after hydration, false during SSR — avoids theme-mismatch flicker
   const mounted = useSyncExternalStore(noopSubscribe, () => true, () => false);
+  // The toggle renders in the nav, the palette and the mobile menu at once;
+  // a shared mask id would make every instance point at the first one's mask.
+  const maskId = useId();
+  const reduced = useReducedMotionSafe();
 
   const isDark = mounted ? resolvedTheme === "dark" : true;
 
@@ -49,36 +54,46 @@ export function ThemeToggle({ className }: { className?: string }) {
         height="18"
         viewBox="0 0 24 24"
         fill="none"
-        initial={{ rotate: -360, scale: 0.6, opacity: 0 }}
-        animate={{ rotate: 0, scale: 1, opacity: 1 }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        // Reduced motion: drop the 360° rotate + scale spin, keep a short
+        // opacity cross-fade only.
+        initial={reduced ? { opacity: 0 } : { rotate: -360, scale: 0.6, opacity: 0 }}
+        animate={reduced ? { opacity: 1 } : { rotate: 0, scale: 1, opacity: 1 }}
+        transition={
+          reduced
+            ? { duration: 0.2 }
+            : { duration: 0.5, ease: [0.22, 1, 0.36, 1] }
+        }
         aria-hidden
       >
-        <mask id="moon-mask">
+        {/* Every animated SVG attribute needs an explicit `initial`: without it
+            Framer reads the missing attribute and writes r="undefined", which
+            Chrome rejects with a console error. */}
+        <mask id={maskId}>
           <rect width="24" height="24" fill="#fff" />
           <motion.circle
-            cx={isDark ? 17 : 30}
-            cy={isDark ? 7 : 0}
             r="8"
             fill="#000"
+            initial={{ cx: isDark ? 17 : 30, cy: isDark ? 7 : 0 }}
             animate={{ cx: isDark ? 17 : 30, cy: isDark ? 7 : 0 }}
-            transition={{ duration: 0.4 }}
+            transition={reduced ? { duration: 0 } : { duration: 0.4 }}
           />
         </mask>
         <motion.circle
           cx="12"
           cy="12"
           fill="currentColor"
-          mask="url(#moon-mask)"
+          mask={`url(#${maskId})`}
+          initial={{ r: isDark ? 8 : 5 }}
           animate={{ r: isDark ? 8 : 5 }}
-          transition={{ duration: 0.4 }}
+          transition={reduced ? { duration: 0 } : { duration: 0.4 }}
         />
         <motion.g
           stroke="currentColor"
           strokeWidth="1.6"
           strokeLinecap="round"
-          animate={{ opacity: isDark ? 0 : 1, scale: isDark ? 0.4 : 1 }}
-          transition={{ duration: 0.3 }}
+          // Reduced motion: no scale collapse — snap the rays, opacity only.
+          animate={{ opacity: isDark ? 0 : 1, scale: reduced ? 1 : isDark ? 0.4 : 1 }}
+          transition={reduced ? { duration: 0 } : { duration: 0.3 }}
           style={{ transformOrigin: "center" }}
         >
           <line x1="12" y1="1.5" x2="12" y2="3.5" />

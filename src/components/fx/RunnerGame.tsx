@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 
 /**
@@ -9,8 +9,12 @@ import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
  */
 export function RunnerGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [score, setScore] = useState(0);
-  const [best, setBest] = useState(0);
+  // Score/best live in refs and are painted straight into DOM text nodes, so the
+  // rAF loop never triggers a React re-render (~60/sec) for the life of the page.
+  const scoreElRef = useRef<HTMLSpanElement>(null);
+  const bestElRef = useRef<HTMLSpanElement>(null);
+  const scoreRef = useRef(0);
+  const bestRef = useRef(0);
   const reduced = useReducedMotionSafe();
 
   useEffect(() => {
@@ -87,16 +91,23 @@ export function RunnerGame() {
           dist = 0;
           speed = 4;
           obstacles.length = 0;
-          setScore((s) => {
-            setBest((b) => Math.max(b, s));
-            return 0;
-          });
+          if (scoreRef.current > bestRef.current) {
+            bestRef.current = scoreRef.current;
+            if (bestElRef.current)
+              bestElRef.current.textContent = String(bestRef.current);
+          }
+          // Score is reset to 0 by the end-of-frame update below (dist === 0).
           break;
         }
       }
       while (obstacles[0] && obstacles[0].x < -30) obstacles.shift();
 
-      setScore(Math.floor(dist / 10));
+      const nextScore = Math.floor(dist / 10);
+      if (nextScore !== scoreRef.current) {
+        scoreRef.current = nextScore;
+        if (scoreElRef.current)
+          scoreElRef.current.textContent = String(nextScore);
+      }
       frame = requestAnimationFrame(loop);
     };
     frame = requestAnimationFrame(loop);
@@ -114,7 +125,8 @@ export function RunnerGame() {
   return (
     <div className="glass mt-10 inline-block p-4">
       <p className="mono-chip mb-2 text-muted-fg">
-        PRESS SPACE TO JUMP · SCORE {score} · BEST {best}
+        PRESS SPACE TO JUMP · SCORE <span ref={scoreElRef}>0</span> · BEST{" "}
+        <span ref={bestElRef}>0</span>
       </p>
       <canvas
         ref={canvasRef}

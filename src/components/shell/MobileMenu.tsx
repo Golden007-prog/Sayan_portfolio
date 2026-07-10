@@ -134,26 +134,48 @@ export function MobileMenu({ className }: { className?: string }) {
     };
   }, [open, smooth]);
 
-  // ESC close + Tab focus trap; focus restored to trigger on close (§27)
+  // ESC close + Tab focus trap; the rest of the page is made inert while the
+  // overlay is open, and focus is restored to the trigger on close (§27)
   useEffect(() => {
     if (!open) return;
     const overlay = overlayRef.current;
     const trigger = triggerRef.current;
+
+    // Make every sibling of the overlay inert to keyboard + assistive tech so
+    // focus (and the screen-reader virtual cursor) can't walk into the page
+    // behind the dialog. `inert` is the primary mechanism; aria-hidden is a
+    // fallback for AT that predates inert.
+    const backdropped = overlay
+      ? Array.from(document.body.children)
+          .filter((el) => el !== overlay)
+          .map((el) => {
+            const hadInert = el.hasAttribute("inert");
+            const prevAriaHidden = el.getAttribute("aria-hidden");
+            el.setAttribute("inert", "");
+            el.setAttribute("aria-hidden", "true");
+            return { el, hadInert, prevAriaHidden };
+          })
+      : [];
+
     overlay?.querySelector<HTMLElement>(FOCUSABLE)?.focus();
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         close();
         return;
       }
       if (e.key !== "Tab" || !overlay) return;
+      // Recompute focusables live — nav links mount/animate in after open.
       const items = Array.from(overlay.querySelectorAll<HTMLElement>(FOCUSABLE));
       if (items.length === 0) return;
       const first = items[0];
       const last = items[items.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
+      const activeEl = document.activeElement;
+      const outside = !overlay.contains(activeEl);
+      if (e.shiftKey && (activeEl === first || outside)) {
         e.preventDefault();
         last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
+      } else if (!e.shiftKey && (activeEl === last || outside)) {
         e.preventDefault();
         first.focus();
       }
@@ -161,6 +183,13 @@ export function MobileMenu({ className }: { className?: string }) {
     window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("keydown", onKey);
+      // Restore the background BEFORE moving focus, so the trigger — a sibling
+      // that was just inerted — is focusable again.
+      backdropped.forEach(({ el, hadInert, prevAriaHidden }) => {
+        if (!hadInert) el.removeAttribute("inert");
+        if (prevAriaHidden === null) el.removeAttribute("aria-hidden");
+        else el.setAttribute("aria-hidden", prevAriaHidden);
+      });
       trigger?.focus();
     };
   }, [open, close]);
@@ -285,7 +314,7 @@ export function MobileMenu({ className }: { className?: string }) {
                             ease: [0.22, 1, 0.36, 1],
                           }}
                           data-cursor="link"
-                          className="group flex items-baseline gap-4 font-display text-4xl font-bold tracking-tight sm:text-5xl"
+                          className="group flex min-h-11 items-baseline gap-4 font-display text-4xl font-bold tracking-tight sm:text-5xl"
                         >
                           <span className="mono-chip text-muted-fg" aria-hidden>
                             0{i + 1}
@@ -317,7 +346,7 @@ export function MobileMenu({ className }: { className?: string }) {
                         key={s.label}
                         href={s.href}
                         target="_blank"
-                        rel="noopener noreferrer"
+                        rel="me noopener noreferrer"
                         aria-label={`${s.label} — opens in new tab`}
                         data-cursor="link"
                         className="glass-1 flex h-11 w-11 items-center justify-center rounded-full text-muted-fg transition-colors hover:text-fg"

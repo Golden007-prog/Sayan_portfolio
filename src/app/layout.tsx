@@ -91,10 +91,18 @@ export default function RootLayout({
   return (
     // suppressHydrationWarning: next-themes stamps the theme class pre-paint
     <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
-      {/* ↑↑↓↓←→←→BA */}
+      <head>
+        {/* §239 — RepoCards fetches api.github.com; avatars load from its CDN */}
+        <link rel="preconnect" href="https://api.github.com" />
+        <link rel="dns-prefetch" href="https://api.github.com" />
+        <link rel="dns-prefetch" href="https://avatars.githubusercontent.com" />
+      </head>
       <body
         className={`${spaceGrotesk.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}
       >
+        {/* A JSX comment never reaches the DOM, so the Konami hint (§182) is
+            injected as a real HTML comment for anyone reading view-source. */}
+        <div hidden dangerouslySetInnerHTML={{ __html: "<!-- ↑↑↓↓←→←→BA -->" }} />
         <ThemeProvider>
           <SmoothScroll>
             <CursorProvider>

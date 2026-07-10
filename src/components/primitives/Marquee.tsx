@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { gsap } from "@/lib/gsap";
 import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 import { cn } from "@/lib/cn";
@@ -32,13 +32,20 @@ export function Marquee({
   const wrapRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotionSafe();
+  // WCAG 2.2.2: auto-moving content >5s needs a pause control reachable by
+  // keyboard and touch, not just mouse hover.
+  const [paused, setPaused] = useState(false);
+  const pausedRef = useRef(paused);
+  useEffect(() => {
+    pausedRef.current = paused;
+  }, [paused]);
 
   useEffect(() => {
     const wrap = wrapRef.current;
     const track = trackRef.current;
     if (!wrap || !track || reduced) return;
 
-    let paused = false;
+    let hovering = false;
     let visible = true;
     let x = 0;
 
@@ -48,18 +55,21 @@ export function Marquee({
     );
     io.observe(wrap);
 
-    const onEnter = () => { if (pauseOnHover) paused = true; };
-    const onLeave = () => { paused = false; };
+    const onEnter = () => { if (pauseOnHover) hovering = true; };
+    const onLeave = () => { hovering = false; };
     wrap.addEventListener("mouseenter", onEnter);
     wrap.addEventListener("mouseleave", onLeave);
 
     const tick = (_t: number, deltaMs: number) => {
-      if (paused || !visible) return;
+      if (hovering || pausedRef.current || !visible) return;
       const half = track.scrollWidth / 2;
       if (half <= 0) return;
       x -= direction * speed * (deltaMs / 1000);
-      // wrap into [-half, 0) so the two copies loop seamlessly
-      x = ((x % half) + half) % half * -1;
+      // Wrap into (-half, 0] so the two identical copies loop seamlessly.
+      // JS % keeps the sign of x, so a positive x (direction -1) needs the
+      // extra shift to land back inside the window.
+      x %= half;
+      if (x > 0) x -= half;
       track.style.transform = `translate3d(${x}px,0,0)`;
     };
     gsap.ticker.add(tick);
@@ -81,17 +91,24 @@ export function Marquee({
   }
 
   return (
-    <div
-      ref={wrapRef}
-      className={cn("overflow-hidden", className)}
-      aria-label={ariaLabel}
-    >
-      <div ref={trackRef} className="flex w-max will-change-transform">
+    <div ref={wrapRef} className={cn("group relative overflow-hidden", className)}>
+      <div ref={trackRef} className="flex w-max will-change-transform" aria-label={ariaLabel}>
         <div className="flex shrink-0 items-center">{children}</div>
         <div className="flex shrink-0 items-center" aria-hidden>
           {children}
         </div>
       </div>
+      <button
+        type="button"
+        onClick={() => setPaused((p) => !p)}
+        aria-pressed={paused}
+        className="glass-1 absolute right-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
+      >
+        <span aria-hidden className="text-xs">{paused ? "▶" : "❚❚"}</span>
+        <span className="sr-only">
+          {paused ? "Resume scrolling technology list" : "Pause scrolling technology list"}
+        </span>
+      </button>
     </div>
   );
 }

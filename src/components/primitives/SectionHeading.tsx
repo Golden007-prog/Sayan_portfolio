@@ -31,22 +31,24 @@ export function SectionHeading({
     if (!el) return;
     const ctx = gsap.context(() => {
       if (reduced) {
-        gsap.set("[data-sh]", { autoAlpha: 1, y: 0 });
+        gsap.set("[data-sh]", { opacity: 1, y: 0 });
         gsap.set("[data-sh-line]", { scaleX: 1 });
         return;
       }
+      // opacity, not autoAlpha — autoAlpha's `visibility: hidden` would pull
+      // the <h2> out of the accessibility tree until it scrolled into view.
       const tl = gsap.timeline({
         scrollTrigger: { trigger: el, start: "top 85%", once: true },
       });
       tl.fromTo(
         "[data-sh='eyebrow']",
-        { autoAlpha: 0, y: 16 },
-        { autoAlpha: 1, y: 0, duration: 0.6 },
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.6 },
       )
         .fromTo(
           "[data-sh='heading']",
-          { autoAlpha: 0, y: 40, clipPath: "inset(0 0 100% 0)" },
-          { autoAlpha: 1, y: 0, clipPath: "inset(0 0 -10% 0)", duration: 0.9 },
+          { opacity: 0, y: 40, clipPath: "inset(0 0 100% 0)" },
+          { opacity: 1, y: 0, clipPath: "inset(0 0 -10% 0)", duration: 0.9 },
           "-=0.35",
         )
         .fromTo(

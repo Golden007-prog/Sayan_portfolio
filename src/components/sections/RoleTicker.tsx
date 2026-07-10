@@ -134,7 +134,7 @@ export function RoleTicker({ roles, className }: RoleTickerProps) {
     <p
       ref={rootRef}
       className={cn(
-        "min-h-[1.75em] font-mono text-sm tracking-wide text-accent2 md:text-base",
+        "min-h-[1.75em] font-mono text-sm tracking-wide text-accent2t md:text-base",
         className,
       )}
       onMouseEnter={scramble}
