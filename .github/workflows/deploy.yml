@@ -24,7 +24,11 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      - run: npm ci
+      # `npm install`, not `npm ci`: the lockfile is generated on Windows, where
+      # npm omits the wasm32-wasi optional subtrees (@emnapi/*) that
+      # @tailwindcss/oxide and sharp declare. `npm ci`'s strict tree check then
+      # rejects the lockfile on Linux; a fresh resolve is correct here.
+      - run: npm install --no-audit --no-fund
       - run: npm run build
         env:
           GITHUB_PAGES: "true" # basePath + NEXT_PUBLIC_BASE_PATH derive from this in next.config.ts
