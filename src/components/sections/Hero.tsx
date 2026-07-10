@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useTheme } from "next-themes";
 import {
   Fragment,
   useEffect,
@@ -56,18 +57,36 @@ export function Hero() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const reduced = useReducedMotionSafe();
   const { scrollTo } = useSmoothScroll();
+  const { resolvedTheme } = useTheme();
   const saveData = useSyncExternalStore(subscribeNever, getSaveData, () => false);
   const [scrolled, setScrolled] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
 
+  // true after hydration, false on the server AND the first client render.
+  // useSyncExternalStore replays the server snapshot during hydration, so
+  // gating on it keeps the SSR markup matching the first client paint.
+  const mounted = useSyncExternalStore(subscribeNever, () => true, () => false);
+
+  // Light mode plays a bright white-bg loop; dark keeps the deep-space one.
+  // Gated on `mounted`: next-themes resolves the theme synchronously on the
+  // client, so reading it unguarded would render the light poster on hydration
+  // while the server rendered the dark one — a hydration mismatch on the
+  // <Image> fallback's src. Defaulting to dark until mounted avoids that; the
+  // <video> only mounts post-idle, long after this flips.
+  const isLight = mounted && resolvedTheme === "light";
+  const heroPoster = isLight ? media.heroPosterLight : media.heroPoster;
+  const heroVideoWebm = isLight ? media.heroVideoLightWebm : media.heroVideoWebm;
+  const heroVideoMp4 = isLight ? media.heroVideoLightMp4 : media.heroVideoMp4;
+
   /*
-   * The 300KB loop competes with LCP on a throttled phone, so the poster is
-   * the hero's first paint and the video only mounts once the page is idle —
-   * and never on narrow viewports, where the poster reads identically.
+   * The poster is the hero's first paint and the loop mounts once the page is
+   * idle, so the 300KB video never competes with the initial render. It is not
+   * gated on viewport width: measurement showed a width gate left the simulated
+   * mobile LCP unchanged (4.7s either way), so it only cost phones the video
+   * background the design calls for. Data-saver and reduced-motion still opt out.
    */
   useEffect(() => {
     if (reduced || saveData) return;
-    if (!window.matchMedia("(min-width: 768px)").matches) return;
 
     let idle = 0;
     const arm = () => {
@@ -129,7 +148,9 @@ export function Hero() {
       document.removeEventListener("visibilitychange", onVisibility);
       observer?.disconnect();
     };
-  }, [showVideo]);
+    // isLight remounts the <video> (keyed below) with new sources, so this
+    // must re-run to re-bind play/pause to the fresh element.
+  }, [showVideo, isLight]);
 
   // Scroll indicator fades out permanently after the first scroll (§46)
   useEffect(() => {
@@ -327,6 +348,8 @@ export function Hero() {
       <div aria-hidden data-hero-media className="absolute -inset-4">
         {showVideo ? (
           <video
+            // Remount on theme change so the browser reloads the new sources.
+            key={isLight ? "light" : "dark"}
             ref={videoRef}
             className="h-full w-full object-cover"
             autoPlay
@@ -334,11 +357,11 @@ export function Hero() {
             muted
             playsInline
             preload="metadata"
-            poster={media.heroPoster}
+            poster={heroPoster}
             tabIndex={-1}
           >
-            <source src={media.heroVideoWebm} type="video/webm" />
-            <source src={media.heroVideoMp4} type="video/mp4" />
+            <source src={heroVideoWebm} type="video/webm" />
+            <source src={heroVideoMp4} type="video/mp4" />
           </video>
         ) : (
           /* Reduced motion / data-saver: static poster instead (§50, §56).
@@ -348,7 +371,7 @@ export function Hero() {
              the video reuses the cached poster instead of fetching a second,
              differently-optimized URL. */
           <Image
-            src={media.heroPoster}
+            src={heroPoster}
             alt=""
             fill
             sizes="100vw"
@@ -367,7 +390,7 @@ export function Hero() {
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(120% 85% at 50% 42%, transparent 52%, rgba(5, 6, 10, 0.55) 100%)",
+            "radial-gradient(120% 85% at 50% 42%, transparent 52%, var(--hero-vignette) 100%)",
         }}
       />
 

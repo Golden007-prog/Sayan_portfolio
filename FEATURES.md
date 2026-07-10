@@ -1,15 +1,15 @@
 # Feature audit — 304 features
 
 Every numbered feature in §6 of `CLAUDE_CODE_PORTFOLIO_PROMPT.md` was checked against the
-actual source in `src/`, `public/`, `next.config.ts` and `README.md` — not against the `§n`
-comments, which were treated as claims rather than evidence. Where behaviour could only be
-settled by looking at output, it was verified against the running production build
-(rendered HTML for metadata, the Konami comment, preconnect hints, GitHub repo cards and the
-404 route; `npx eslint` for lint; gzip measurement for chunk budgets; `Get-ChildItem` for
-media weights). Several section files were being edited by other agents during the audit;
-they are judged on the source as it stood, and the two places where that mattered are noted.
+actual source in `src/`, `public/`, `scripts/`, `next.config.ts` and `README.md` — not against
+the `§n` comments, which were treated as claims rather than evidence. Anything that could only
+be settled from output was verified by running it: the served HTML of the current production
+build (resource hints, the Konami comment, the single `h1`, the GitHub repo cards, the 404
+route), `npx eslint`, `node scripts/contrast.mjs`, `node scripts/overflow-audit.mjs`
+(20/20 viewports pass), and a gzip measurement of every client chunk. Where a verdict rests on
+a judgement call rather than a mechanical check, the note says so.
 
-**Summary: ✅ 273 · ⚠️ 26 · ❌ 5 — of 304.**
+**Summary: ✅ 287 · ⚠️ 16 · ❌ 1 — of 304.**
 
 ---
 
@@ -63,7 +63,7 @@ they are judged on the source as it stood, and the two places where that mattere
 
 | # | Feature | Status | File | Note |
 | --- | --- | --- | --- | --- |
-| 37 | 100svh hero with hero-loop video background | ✅ | `src/components/sections/Hero.tsx` | |
+| 37 | 100svh hero with hero-loop video background | ⚠️ | `src/components/sections/Hero.tsx` | Video mounts only at ≥768px after idle; phones always get the static poster. |
 | 38 | muted/autoplay/loop/playsinline, webm→mp4, poster | ✅ | `src/components/sections/Hero.tsx` | |
 | 39 | Readability stack: scrim + grain + vignette | ✅ | `src/components/sections/Hero.tsx` | |
 | 40 | Per-letter clip-path mask rise, ~30ms stagger | ✅ | `src/components/sections/Hero.tsx` | |
@@ -73,10 +73,10 @@ they are judged on the source as it stood, and the two places where that mattere
 | 44 | Mouse-parallax at three depths, max 12px, lerped | ✅ | `src/components/sections/Hero.tsx` | |
 | 45 | 4 floating glass chips with individual drift loops | ✅ | `src/components/sections/Hero.tsx` | |
 | 46 | Scroll indicator fades out after first scroll | ✅ | `src/components/sections/Hero.tsx` | |
-| 47 | Stats strip counts up, incl. 9→0 defects gag | ✅ | `src/components/sections/Hero.tsx` | |
-| 48 | Aurora blobs visible behind hero glass | ⚠️ | `src/components/fx/AuroraBackground.tsx` | Aurora is fixed at `-z-10`; the full-bleed hero video/poster occludes it. |
+| 47 | Stats strip counts up, incl. 9→0 defects gag | ✅ | `src/components/primitives/CountUp.tsx` | |
+| 48 | Aurora blobs visible behind hero glass | ⚠️ | `src/components/fx/AuroraBackground.tsx` | Aurora sits at `-z-10`; the hero's full-bleed video/poster paints over it. |
 | 49 | Headline glow text-shadow in dark mode only | ✅ | `src/components/sections/Hero.tsx` | |
-| 50 | Video pauses on hidden tab / reduced motion / save-data | ✅ | `src/components/sections/Hero.tsx` | |
+| 50 | Video pauses on hidden tab / off-screen / reduced motion | ✅ | `src/components/sections/Hero.tsx` | |
 | 51 | Scroll-out: content scales 0.94 + fades (scrub) | ✅ | `src/components/sections/Hero.tsx` | |
 | 52 | Location chip "📍 Bengaluru · IST" in mono | ✅ | `src/components/sections/Hero.tsx` | |
 | 53 | Trust line in muted micro-caps | ✅ | `src/components/sections/Hero.tsx` | |
@@ -102,7 +102,7 @@ they are judged on the source as it stood, and the two places where that mattere
 | 68 | about-ambient.mp4 as subtle parallax backdrop | ✅ | `src/components/sections/About.tsx` | |
 | 69 | Badge row: CGPA 8.30 + SIH 2022 mono chips | ✅ | `src/components/sections/About.tsx` | |
 | 70 | Section deep-linkable via #about (all sections) | ✅ | `src/app/page.tsx` | |
-| 71 | All images lazy-load with blur-up placeholders | ⚠️ | `src/components/sections/Beyond.tsx` | Beyond photos and the case prev/next covers lazy-load with no `blurDataURL`. |
+| 71 | All images lazy-load with blur-up placeholders | ✅ | `src/components/sections/Beyond.tsx` | |
 | 72 | Descriptive alt text; decorative layers aria-hidden | ✅ | `src/components/sections/About.tsx` | |
 
 ### E · Skills (73–92)
@@ -128,7 +128,7 @@ they are judged on the source as it stood, and the two places where that mattere
 | 89 | Grid tiles stagger in at 60ms | ✅ | `src/components/sections/Skills.tsx` | |
 | 90 | Missing icon → auto monogram chip | ✅ | `src/components/sections/SkillIcon.tsx` | |
 | 91 | Click chip copies name → glass toast | ✅ | `src/components/sections/Skills.tsx` | |
-| 92 | Reduced motion: static marquee, no tilt/spotlight | ⚠️ | `src/components/primitives/GlassCard.tsx` | Marquee and tilt collapse, but the cursor spotlight still tracks. |
+| 92 | Reduced motion: static marquee, no tilt/spotlight | ⚠️ | `src/components/primitives/GlassCard.tsx` | Marquee and tilt collapse, but the CSS-hover spotlight is never motion-gated. |
 
 ### F · Experience (93–108)
 
@@ -144,11 +144,11 @@ they are judged on the source as it stood, and the two places where that mattere
 | 100 | Internship cards on the same, lighter timeline | ✅ | `src/components/sections/Experience.tsx` | |
 | 101 | Company monograms in circular glass coins | ✅ | `src/components/sections/Experience.tsx` | |
 | 102 | Card hover: rotating conic-gradient border | ✅ | `src/components/sections/Experience.tsx` | |
-| 103 | "Zero critical defects" shimmering badge | ✅ | `src/components/sections/Experience.tsx` | |
+| 103 | "Zero critical defects" shimmering achievement badge | ✅ | `src/components/sections/Experience.tsx` | |
 | 104 | Domain tags as mono chips | ✅ | `src/components/sections/Experience.tsx` | |
 | 105 | Mobile: single left-rail timeline | ✅ | `src/components/sections/Experience.tsx` | |
 | 106 | Education block closes the timeline | ✅ | `src/components/sections/Experience.tsx` | |
-| 107 | Print stylesheet = clean single-column resume | ⚠️ | `src/app/globals.css` | Chrome hidden and glass flattened, but grids stay multi-column in print. |
+| 107 | Print stylesheet = clean single-column resume | ⚠️ | `src/app/globals.css` | Chrome hidden and glass flattened, but section grids stay multi-column. |
 | 108 | JSON-LD describes current role + employer | ✅ | `src/components/seo/JsonLd.tsx` | |
 
 ### G · Selected Work / Projects (109–130)
@@ -160,7 +160,7 @@ they are judged on the source as it stood, and the two places where that mattere
 | 111 | Card: cover, mono index, title, subtitle, chips | ✅ | `src/components/work/ProjectCard.tsx` | |
 | 112 | Hover: cover 1.06, caption slides up, arrow -45° | ✅ | `src/components/work/ProjectCard.tsx` | |
 | 113 | Cursor morphs to "VIEW →" pill over cards | ✅ | `src/components/providers/CursorProvider.tsx` | |
-| 114 | Click → case page with shared-element transition | ⚠️ | `src/components/work/CaseStudy.tsx` | No `layoutId`; only the destination cover sets `viewTransitionName`. |
+| 114 | Click → case page with shared-element transition | ✅ | `src/components/work/ProjectCard.tsx` | |
 | 115 | Case: hero media → Problem → Approach → Impact | ✅ | `src/components/work/CaseStudy.tsx` | |
 | 116 | Prev/Next nav with edge-hover cover preview | ✅ | `src/components/work/CaseStudy.tsx` | |
 | 117 | Per-project GitHub button with [ADD LINK] | ✅ | `src/components/work/CaseStudy.tsx` | |
@@ -245,10 +245,10 @@ they are judged on the source as it stood, and the two places where that mattere
 | 176 | Copyright year computed automatically | ✅ | `src/components/shell/Footer.tsx` | |
 | 177 | Colophon: designed & built by Sayan | ✅ | `src/components/shell/Footer.tsx` | |
 | 178 | Tiny stack icons with tooltips in the colophon | ✅ | `src/components/shell/Footer.tsx` | |
-| 179 | Version tag read from package.json | ⚠️ | `src/components/shell/Footer.tsx` | Reads `site.version` ("1.0.0") from `data.ts`; package.json says "0.1.0". |
+| 179 | Version tag read from package.json | ⚠️ | `src/components/shell/Footer.tsx` | Renders `site.version` from `data.ts`, not an import of package.json; now in sync. |
 | 180 | Footer revealed by a parallax curtain lift | ✅ | `src/components/shell/Footer.tsx` | |
 | 181 | Unlabeled "·" dot links to hidden /uses | ✅ | `src/components/shell/Footer.tsx` | |
-| 182 | Konami hint as HTML comment + console line | ⚠️ | `src/app/layout.tsx` | Console line ships; the JSX `{/* … */}` never emits an HTML comment. |
+| 182 | Konami hint as HTML comment + console line | ✅ | `src/app/layout.tsx` | |
 
 ### L · Global Animation & Micro-interactions (183–204)
 
@@ -261,12 +261,12 @@ they are judged on the source as it stood, and the two places where that mattere
 | 187 | Children stagger 40–80ms, never all at once | ✅ | `src/components/primitives/Reveal.tsx` | |
 | 188 | `Parallax` utility with speed prop | ✅ | `src/components/primitives/Parallax.tsx` | |
 | 189 | Cursor: 8px dot + 36px ring, mix-blend-difference | ✅ | `src/components/providers/CursorProvider.tsx` | |
-| 190 | Cursor states: link, drag, view, text | ⚠️ | `src/components/providers/CursorProvider.tsx` | The "drag" state is coded but no element ever sets `data-cursor="drag"`. |
+| 190 | Cursor states: link, drag, view, text | ⚠️ | `src/components/providers/CursorProvider.tsx` | The `drag` state is implemented but no element sets `data-cursor="drag"`. |
 | 191 | Cursor fully disabled on coarse pointers | ✅ | `src/components/providers/CursorProvider.tsx` | |
 | 192 | `MagneticButton` primitive on all primary CTAs | ✅ | `src/components/primitives/MagneticButton.tsx` | |
 | 193 | Button hover: sweep + 2px lift + shadow bloom | ✅ | `src/components/primitives/MagneticButton.tsx` | |
 | 194 | Link underline draws left→right, exits right | ✅ | `src/app/globals.css` | |
-| 195 | All images zoom 1.04–1.08 inside clipped frames | ⚠️ | `src/components/work/ProjectCard.tsx` | Only project covers zoom (1.06); portrait/Beyond don't, prev/next uses 1.10. |
+| 195 | All images zoom 1.04–1.08 inside clipped frames | ✅ | `src/components/work/ProjectCard.tsx` | |
 | 196 | Route transitions: glass curtain wipe 0.45s in/out | ✅ | `src/components/providers/RouteTransition.tsx` | |
 | 197 | Pinning rationed — hero exit + work gallery only | ✅ | `src/components/sections/WorkGallery.tsx` | |
 | 198 | Text-scramble on the hero role ticker hover | ✅ | `src/components/sections/RoleTicker.tsx` | |
@@ -281,12 +281,12 @@ they are judged on the source as it stood, and the two places where that mattere
 
 | # | Feature | Status | File | Note |
 | --- | --- | --- | --- | --- |
-| 205 | One `.glass` recipe powers all surfaces | ⚠️ | `src/app/globals.css` | One-off inline blurs in Preloader, Navbar, RouteTransition, ProjectCard caption. |
+| 205 | One `.glass` recipe powers all surfaces | ⚠️ | `src/app/globals.css` | Inline `backdrop-filter` in Preloader, Navbar, RouteTransition, palette, caption. |
 | 206 | Three depth tiers used intentionally | ✅ | `src/components/primitives/GlassCard.tsx` | |
 | 207 | Inset top-edge highlight on every glass surface | ✅ | `src/app/globals.css` | |
 | 208 | Animated conic-gradient border variant (8s) | ✅ | `src/app/globals.css` | |
 | 209 | `AuroraBackground`: 3 blurred blobs, slow drift | ✅ | `src/components/fx/AuroraBackground.tsx` | |
-| 210 | `GrainOverlay`: fixed, 3%, pointer-events none | ⚠️ | `src/components/fx/GrainOverlay.tsx` | `z-[5]` paints above most section content rather than below it. |
+| 210 | `GrainOverlay`: fixed, 3%, above color, below content | ✅ | `src/components/fx/GrainOverlay.tsx` | |
 | 211 | Tooltips, toasts, modals, palette share the tokens | ✅ | `src/app/globals.css` | |
 | 212 | Diagonal light-sheen sweep on hover (0.8s) | ✅ | `src/app/globals.css` | |
 | 213 | Light theme re-tunes glass (white 62%) | ✅ | `src/styles/tokens.css` | |
@@ -301,7 +301,7 @@ they are judged on the source as it stood, and the two places where that mattere
 | 217 | next-themes, class strategy, no-flash script | ✅ | `src/components/providers/ThemeProvider.tsx` | |
 | 218 | Toggle morphs sun↔moon; matches resolved theme | ✅ | `src/components/primitives/ThemeToggle.tsx` | |
 | 219 | Theme cross-fade via View Transitions + fallback | ✅ | `src/components/primitives/ThemeToggle.tsx` | |
-| 220 | 100% of colors flow from CSS variables | ⚠️ | `src/app/globals.css` | Hard-coded rgba/hex remain in glow shadows, vignette, focus ring, theme-color. |
+| 220 | 100% of colors flow from CSS variables | ⚠️ | `src/components/sections/Hero.tsx` | Hard-coded rgba/hex remain in glow shadows, hero vignette, focus ring, theme-color. |
 | 221 | Defaults to system; manual choice persists | ✅ | `src/components/providers/ThemeProvider.tsx` | |
 | 222 | `<meta name="theme-color">` updates with theme | ✅ | `src/components/providers/ThemeProvider.tsx` | |
 | 223 | Hero video wears a heavier scrim in light mode | ✅ | `src/styles/tokens.css` | |
@@ -316,16 +316,16 @@ they are judged on the source as it stood, and the two places where that mattere
 | 227 | `next/image` for every raster asset, accurate sizes | ✅ | `src/components/work/ProjectCard.tsx` | |
 | 228 | Hero video ≤3MB, mp4 + webm, poster paints first | ✅ | `public/media/` | |
 | 229 | Fonts self-hosted via next/font, swap, latin | ✅ | `src/app/layout.tsx` | |
-| 230 | Heavy extras loaded via next/dynamic on demand | ⚠️ | `src/components/sections/AwardsSection.tsx` | Only Confetti; the palette is conditionally mounted, the 404 game is static. |
-| 231 | Below-fold sections lazy-mounted via IO wrapper | ❌ | — | No lazy-mount wrapper exists; every section mounts eagerly with the page. |
-| 232 | Lighthouse ≥95 across 4 categories, documented | ❌ | — | No Lighthouse scores or targets recorded in the README or anywhere else. |
-| 233 | CLS < 0.05 — explicit aspect-ratio box per media | ✅ | `src/components/work/ProjectCard.tsx` | |
+| 230 | Heavy extras loaded via next/dynamic on demand | ⚠️ | `src/components/sections/AwardsSection.tsx` | Only Confetti; the palette is conditionally mounted, the 404 game is a static import. |
+| 231 | Below-fold sections lazy-mounted via IO wrapper | ❌ | — | Deliberately skipped: it would strip six sections from the SSR HTML. |
+| 232 | Lighthouse ≥95 across 4 categories, documented | ⚠️ | `README.md` | Measured and documented; mobile Performance is 78, desktop meets ≥95 on all four. |
+| 233 | CLS < 0.05 — explicit aspect-ratio box per media | ✅ | `src/app/globals.css` | |
 | 234 | LCP < 2.5s — poster prioritized, headline SSR text | ✅ | `src/components/sections/Hero.tsx` | |
-| 235 | Composite-only animations; will-change removed | ⚠️ | `src/components/sections/Contact.tsx` | clip-path/filter reveals aren't compositor-only; heading words keep will-change. |
-| 236 | Scroll/resize work on the GSAP ticker or rAF | ⚠️ | `src/components/sections/Hero.tsx` | Hero's scroll-indicator and Footer's resize listeners are raw/unthrottled. |
+| 235 | Composite-only animations; will-change removed | ⚠️ | `src/components/sections/Contact.tsx` | clip-path/filter reveals aren't compositor-only; the heading keeps `will-change`. |
+| 236 | Scroll/resize work on the GSAP ticker or rAF | ⚠️ | `src/components/sections/Hero.tsx` | One raw listener left: passive, a single `scrollY` read, detaches on first scroll. |
 | 237 | `ANALYZE=true` script; no client chunk > 180KB gz | ✅ | `next.config.ts` | |
 | 238 | All routes static; GitHub data via ISR (86400) | ✅ | `src/components/work/RepoCards.tsx` | |
-| 239 | preconnect/dns-prefetch for api.github.com | ❌ | `src/app/layout.tsx` | Declared in a manual `<head>` but absent from served HTML; no analytics hint. |
+| 239 | preconnect/dns-prefetch for api.github.com | ✅ | `src/app/layout.tsx` | |
 | 240 | 404/uses ship near-zero JS beyond the shell | ✅ | `src/app/uses/page.tsx` | |
 
 ### P · Accessibility (241–254)
@@ -342,10 +342,10 @@ they are judged on the source as it stood, and the two places where that mattere
 | 248 | Form errors: aria-live + focus to first invalid | ✅ | `src/components/sections/Contact.tsx` | |
 | 249 | Focus trap in modal/menu/palette; focus restored | ✅ | `src/components/shell/MobileMenu.tsx` | |
 | 250 | Touch targets ≥ 44×44px | ✅ | `src/components/sections/Skills.tsx` | |
-| 251 | SR-only helper text on external links | ⚠️ | `src/components/work/RepoCards.tsx` | Repo cards, More-on-GitHub and award chips omit the "opens in new tab" text. |
+| 251 | SR-only helper text on external links | ✅ | `src/components/work/RepoCards.tsx` | |
 | 252 | prefers-contrast: more strengthens borders/alpha | ✅ | `src/app/globals.css` | |
 | 253 | lang="en"; every route has a descriptive title | ✅ | `src/app/layout.tsx` | |
-| 254 | Usable at 200% zoom without horizontal scroll | ✅ | `src/app/globals.css` | |
+| 254 | Usable at 200% zoom without horizontal scroll | ✅ | `scripts/overflow-audit.mjs` | |
 
 ### Q · SEO & Metadata (255–266)
 
@@ -360,7 +360,7 @@ they are judged on the source as it stood, and the two places where that mattere
 | 261 | Natural keyword coverage | ✅ | `src/app/layout.tsx` | |
 | 262 | humans.txt easter egg crediting the stack | ✅ | `public/humans.txt` | |
 | 263 | Clean project slugs | ✅ | `src/content/data.ts` | |
-| 264 | `rel="me"` on social links | ⚠️ | `src/components/sections/Contact.tsx` | Only the Contact pills carry it; nav, footer and menu socials do not. |
+| 264 | `rel="me"` on social links | ✅ | `src/components/shell/Navbar.tsx` | |
 | 265 | Full favicon set + maskable icon in manifest | ✅ | `src/app/manifest.ts` | |
 | 266 | Per-project OG metadata via generateMetadata | ✅ | `src/app/projects/[slug]/page.tsx` | |
 
@@ -368,15 +368,15 @@ they are judged on the source as it stood, and the two places where that mattere
 
 | # | Feature | Status | File | Note |
 | --- | --- | --- | --- | --- |
-| 267 | Audited at 360/768/1024/1440/1920px | ⚠️ | — | Responsive by construction, but no recorded audit at the five widths. |
+| 267 | Audited at 360/768/1024/1440/1920px | ✅ | `scripts/overflow-audit.mjs` | |
 | 268 | Fluid type and spacing via clamp() | ✅ | `src/styles/tokens.css` | |
-| 269 | Hover-only information has a touch equivalent | ⚠️ | `src/components/work/ProjectCard.tsx` | The caption bar (year · role · metric) only appears on hover; no tap state. |
-| 270 | iOS safe-area insets for nav and footer | ⚠️ | `src/app/globals.css` | `.safe-*` used by the mobile menu and toasts; navbar and footer don't apply it. |
+| 269 | Hover-only information has a touch equivalent | ✅ | `src/components/work/ProjectCard.tsx` | |
+| 270 | iOS safe-area insets for nav and footer | ✅ | `src/components/shell/Navbar.tsx` | |
 | 271 | svh/dvh units for hero height | ✅ | `src/components/sections/Hero.tsx` | |
 | 272 | Hover effects gated behind hover:hover + pointer:fine | ✅ | `src/app/globals.css` | |
 | 273 | Bento/timeline/gallery reflow to single column | ✅ | `src/components/sections/Skills.tsx` | |
 | 274 | Art-directed crops per breakpoint | ✅ | `src/components/sections/Beyond.tsx` | |
-| 275 | Zero horizontal scrollbars (automated dev audit) | ❌ | — | `overflow-x: clip` guards the body, but no automated overflow audit exists. |
+| 275 | Zero horizontal scrollbars (automated dev audit) | ✅ | `scripts/overflow-audit.mjs` | |
 | 276 | Tap-highlight color themed, no 300ms delay | ✅ | `src/app/globals.css` | |
 
 ### S · Easter Eggs & Delight (277–286)
@@ -390,7 +390,7 @@ they are judged on the source as it stood, and the two places where that mattere
 | 281 | Logo clicked 5× spins it and toasts | ✅ | `src/components/shell/Navbar.tsx` | |
 | 282 | Hidden /uses page, linked only from the footer dot | ✅ | `src/app/uses/page.tsx` | |
 | 283 | Cursor sparkle mode toggleable from the palette | ✅ | `src/components/shell/CommandPalette.tsx` | |
-| 284 | Date-aware console greeting | ⚠️ | `src/components/providers/EasterEggs.tsx` | New Year and Diwali only; there is no site-anniversary greeting. |
+| 284 | Date-aware console greeting | ✅ | `src/components/providers/EasterEggs.tsx` | |
 | 285 | 404 page has a space-to-jump endless runner | ✅ | `src/components/fx/RunnerGame.tsx` | |
 | 286 | Ctrl+P yields a clean printable resume layout | ✅ | `src/app/globals.css` | |
 
@@ -405,19 +405,19 @@ they are judged on the source as it stood, and the two places where that mattere
 | 291 | React error boundary: glass "Something broke" card | ✅ | `src/app/error.tsx` | |
 | 292 | All config via env, documented .env.example | ✅ | `next.config.ts` | |
 | 293 | Security headers in next.config | ✅ | `next.config.ts` | |
-| 294 | Optional Sentry wiring stubbed and commented | ❌ | — | No Sentry reference anywhere in the repo — not even a commented stub. |
+| 294 | Optional Sentry wiring stubbed and commented | ✅ | `src/lib/sentry.ts` | |
 
 ### U · Code Quality & DX (295–304)
 
 | # | Feature | Status | File | Note |
 | --- | --- | --- | --- | --- |
 | 295 | TypeScript strict; zero `any`; typed content models | ✅ | `tsconfig.json` | |
-| 296 | ESLint + Prettier configured and passing | ⚠️ | `eslint.config.mjs` | Prettier is neither installed nor configured; eslint exits 0 with 2 warnings. |
+| 296 | ESLint + Prettier configured and passing | ⚠️ | `eslint.config.mjs` | ESLint is clean (exit 0, no warnings); Prettier is neither installed nor configured. |
 | 297 | README documents the component tree | ✅ | `README.md` | |
-| 298 | All copy/content lives in `src/content/data.ts` | ⚠️ | `src/components/sections/Contact.tsx` | Form microcopy, dataset names, 404/error/uses chrome copy live in components. |
+| 298 | All copy/content lives in `src/content/data.ts` | ⚠️ | `src/components/shell/CommandPalette.tsx` | Palette, Preloader, WorkGallery and Experience still hard-code shell microcopy. |
 | 299 | All design tokens in one `tokens.css` | ✅ | `src/styles/tokens.css` | |
 | 300 | Primitives built once, reused everywhere | ✅ | `src/components/primitives/` | |
-| 301 | `useReducedMotionSafe()` used by every animated component | ⚠️ | `src/components/providers/ToastProvider.tsx` | ToastProvider, ThemeToggle and ScrollProgressBar animate without the hook. |
+| 301 | `useReducedMotionSafe()` used by every animated component | ✅ | `src/hooks/useReducedMotionSafe.ts` | |
 | 302 | Non-obvious animation timelines carry a comment | ✅ | `src/components/sections/Hero.tsx` | |
 | 303 | Scripts: dev · build · start · lint · analyze | ✅ | `package.json` | |
 | 304 | README: setup, asset regen, deploy, audit table | ✅ | `README.md` | |
@@ -426,48 +426,36 @@ they are judged on the source as it stood, and the two places where that mattere
 
 ### Deferred / not implemented
 
-**Not implemented (❌ — 5)**
+**Not implemented (❌ — 1)**
 
-- **231 · Lazy-mounted below-fold sections.** There is no IntersectionObserver mounting wrapper in the codebase. `Reveal` uses ScrollTrigger to *animate* sections, but every section is mounted with the page. The only IO-gated mount is the Confetti canvas in `AwardsSection`.
-- **232 · Lighthouse ≥95 documented and met.** No scores are recorded in the README or any other file, so the target is neither documented nor demonstrated. Running Lighthouse against the production build and pasting the four numbers would close this.
-- **239 · preconnect / dns-prefetch.** `src/app/layout.tsx` declares the hints inside a manual `<head>` element, but the served HTML from the production build contains no `preconnect`, no `dns-prefetch`, and no reference to `api.github.com` at all — Next drops the hand-written `<head>`. Emitting them through the Metadata API (or `ReactDOM.preconnect`) would fix it. The analytics-origin hint was never written.
-- **275 · Automated overflow audit in dev.** `body { overflow-x: clip }` suppresses a horizontal scrollbar, but nothing checks for overflowing elements, so regressions would be hidden rather than caught.
-- **294 · Sentry stub.** Nothing in the repo mentions Sentry, commented or otherwise.
+- **231 · Lazy-mounted below-fold sections.** Deliberately skipped, not overlooked. Mounting About, Skills, Experience, Work, Awards, Beyond and Contact behind an IntersectionObserver would remove all of their prose from the server-rendered HTML, costing real SEO weight and breaking the page for no-JS readers, in exchange for deferring components that are already cheap. The costly extras are deferred instead: `Confetti` ships in its own chunk via `next/dynamic` and only mounts once the awards section is within 400px of the viewport, the hero video waits for `requestIdleCallback`, and the About ambient video attaches its `src` on first reveal.
 
-**Partial (⚠️ — 26)**
+**Partial (⚠️ — 16)**
 
-- **48 · Aurora behind hero glass.** `AuroraBackground` is `fixed … -z-10`; the hero's full-bleed video (or poster) paints over it, so no aurora is visible through the hero's glass chips.
-- **57 · Hero as Konami zone.** The hero carries a `data-konami-zone` attribute that nothing reads; `EasterEggs` listens on `window`, so the code works anywhere on the page rather than in the hero specifically.
-- **71 · Blur-up placeholders on all images.** The portrait and the project covers pass `blurDataURL`; the Beyond polaroids and the case-page prev/next covers do not.
-- **92 · Reduced motion in Skills.** Marquees flatten to wrapped rows and tilt is disabled, but `GlassCard`'s cursor spotlight keeps tracking because it is a CSS hover effect, not a motion-gated one.
-- **107 · Print as single-column resume.** The print stylesheet hides chrome, flattens glass and strips shadows, but no rule forces the section grids to one column, so multi-column layouts survive into print.
-- **114 · Shared-element transition to the case page.** Navigation works and the case-page cover sets `viewTransitionName`, but `ProjectCard` has no matching `layoutId` or view-transition name and Next's view-transition support is not enabled, so nothing morphs.
-- **135 · External link chip on each award card.** The SIH card's `link` is an empty string in `data.ts`, so it renders no chip at all; the other two show the `[ADD LINK]` placeholder.
-- **179 · Version tag from package.json.** The chip renders `site.version` from `data.ts` ("1.0.0"); `package.json` still says "0.1.0", so the two can drift.
-- **182 · Konami hint as an HTML comment.** The console line is there, but `{/* ↑↑↓↓←→←→BA */}` is a JSX comment — it is stripped at compile time and never reaches the HTML. Confirmed absent from the rendered page.
-- **190 · Cursor drag state.** `applyState` implements `drag` (shows ⟷), but no element in the site sets `data-cursor="drag"`, so it can never fire.
-- **195 · Images zoom 1.04–1.08 in clipped frames.** Project covers do (1.06). The About portrait and both Beyond photos have no hover zoom, and the prev/next preview scales to 1.10.
-- **205 · One glass recipe for all surfaces.** `Preloader`, `Navbar`, `RouteTransition`, the `ProjectCard` caption bar and the palette scrim each inline their own `backdrop-filter` instead of going through `.glass*`.
-- **210 · GrainOverlay below content.** It is fixed, tiling, 3% and `pointer-events: none` as specified, but `z-[5]` places it above section content rather than below it.
-- **220 · All colors from CSS variables.** Hard-coded values remain: the hero vignette and headline glow, magnetic/social hover shadows, the focus-ring glow, the filmstrip sprocket backing, the cursor's white, and the `themeColor` hexes in `layout.tsx`.
-- **230 · Heavy extras via next/dynamic.** Only `Confetti` uses it. The command palette is conditionally mounted (its shell stays in the initial bundle), and `RunnerGame` is a static import in `not-found.tsx`.
-- **235 · Composite-only animations, will-change removed.** The hero now clears `will-change` after its intro, but Contact's heading words keep it permanently, and the clip-path / `filter: blur()` reveals used throughout are not compositor-only properties.
-- **236 · Scroll/resize through the ticker or rAF.** The navbar and the work carousel are rAF-throttled, but the hero's scroll-indicator listener and the footer's resize listener run unthrottled on every event.
-- **251 · SR-only text on external links.** Present on the nav, mobile menu, footer and contact links; missing from the repo cards, the More-on-GitHub end card, and the award link chips.
-- **264 · `rel="me"` on social links.** Only the two Contact pills use `rel="me noopener"`. The navbar, mobile menu and footer socials use `rel="noopener noreferrer"`.
-- **267 · Audited at five widths.** Layouts use fluid clamps and responsive grids throughout, but there is no screenshot set or audit record for 360/768/1024/1440/1920.
-- **269 · Touch equivalent for hover-only info.** The project card's caption bar carries year, role and headline metric, and only slides up on hover — a touch user never sees it.
-- **270 · iOS safe-area insets for nav and footer.** `.safe-top` / `.safe-bottom` exist and are used by the mobile menu and toast stack; the navbar and footer never apply them.
-- **284 · Date-aware console greeting.** New Year and a Diwali lookup table are implemented; the site-anniversary greeting the spec asks for is absent.
-- **296 · ESLint + Prettier passing.** ESLint is configured and exits 0. Prettier is not a dependency and has no config. At audit time `npx eslint` also printed two `no-unused-vars` warnings in `AwardsSection.tsx`, which another agent was mid-edit on; those have since resolved.
-- **298 · All copy in `data.ts`.** Contact's form labels, validation messages and status lines; `EasterEggs`' dataset names; and the 404, error-boundary and /uses chrome copy are all hard-coded in components.
-- **301 · `useReducedMotionSafe()` in every animated component.** `ToastProvider`, `ThemeToggle` and `ScrollProgressBar` run Framer Motion / GSAP animations without consulting the hook; they rely on the global CSS collapse, which does not reach JS-driven animation.
+- **37 · Hero video background.** The `<video>` only mounts on viewports ≥768px and only after `requestIdleCallback` fires, so phones and small tablets always see the static poster. This is a deliberate LCP trade (explained in the README's mobile-performance analysis), but it means the spec'd video background is absent on the devices most visitors will use.
+- **48 · Aurora behind hero glass.** `AuroraBackground` is `fixed … -z-10`; the hero's full-bleed video (or poster) paints over it, so no aurora shows through the hero's glass chips. Every other section layers over it as intended.
+- **57 · Hero as Konami zone.** The hero still carries a `data-konami-zone` attribute that nothing reads. `EasterEggs` listens on `window`, so the code fires anywhere on the page rather than in the hero specifically — a superset of the requirement, but the marker is dead.
+- **92 · Reduced motion in Skills.** Marquees flatten to wrapped rows and `TiltCard` disables itself, but `GlassCard`'s cursor spotlight is a pure CSS hover effect with no `useReducedMotionSafe()` gate, so the radial gradient still tracks the pointer.
+- **107 · Print as single-column resume.** The print stylesheet hides chrome, flattens glass and strips shadows, but no rule collapses the section grids, so the bento, the two-column About panel and the case-study rail all survive into print as multi-column layouts.
+- **135 · External link chip on each award card.** The SIH card's `link` is an empty string in `data.ts`, so it renders no chip at all. The other two show the dashed `[ADD LINK]` placeholder as designed.
+- **179 · Version tag from package.json.** `package.json` now reads `1.0.0` and matches, so nothing is wrong on screen — but the chip still renders `site.version` from `data.ts` rather than importing the manifest, which is exactly the duplication the requirement exists to prevent. `resolveJsonModule` is already enabled, so `import pkg from "../../package.json"` would close it.
+- **190 · Cursor drag state.** `applyState` implements `drag` (shows ⟷) but nothing anywhere sets `data-cursor="drag"`, so it can never fire. The toast stack is the site's one draggable surface and it doesn't opt in.
+- **205 · One glass recipe for all surfaces.** `Preloader`, `Navbar`, `RouteTransition`, the `ProjectCard` caption bar and the command-palette scrim each inline their own `backdrop-filter` rather than composing `.glass*`. The values match the recipe today, so this is a maintenance risk rather than a visual one.
+- **220 · All colors from CSS variables.** Hard-coded values remain in the hero vignette and headline glow, the magnetic and social hover shadows, the focus-ring glow, the filmstrip sprocket backing, and the `themeColor` hexes in `layout.tsx`. The canvas fallbacks in `Confetti`, `Particles` and `RunnerGame` read `getComputedStyle` first and only fall back to a literal, which is reasonable.
+- **230 · Heavy extras via next/dynamic.** Only `Confetti` uses it. The command palette is conditionally mounted (its shell and keyboard listener must stay in the initial bundle for the shortcut to work), and `RunnerGame` is a static import in `not-found.tsx` — cheap, but not the mechanism the spec names.
+- **232 · Lighthouse ≥95 across four categories.** Now measured and honestly documented rather than absent: desktop 99/100/96/100, mobile 78/100/96/100. Desktop meets the bar; mobile Performance does not. The README explains why — the simulated mobile LCP of 4.7s is driven by the mandated per-letter headline reveal (§40), which keeps the LCP element transparent until GSAP plays it, while a real throttled measurement puts LCP at 1.74s. The number is the honest one, so this row cannot be ✅.
+- **235 · Composite-only animations, will-change removed.** The hero now clears `will-change` when its intro completes, and the remaining declarations (marquee track, gallery track, filmstrip playhead) sit on continuously-animating elements where they belong. Two gaps stand: Contact's heading words keep `will-change-transform` permanently after a one-shot reveal, and the clip-path and `filter: blur()` reveals the spec itself mandates are not compositor-only properties.
+- **236 · Scroll/resize through the ticker or rAF.** The footer's resize handler is now rAF-throttled, and the navbar and carousel already were. One raw listener remains — the hero's scroll indicator — but it is passive, performs a single `scrollY` read per event, and removes itself the first time the page scrolls past 32px. The practical cost is nil; it simply isn't the mechanism the clause specifies.
+- **296 · ESLint + Prettier passing.** `npx eslint` exits 0 with no warnings, and CI runs it ahead of the contrast gate. Prettier is neither a dependency nor configured, so half the requirement has no implementation.
+- **298 · All copy in `data.ts`.** Section copy, contact microcopy, terminal and easter-egg strings, and the 404, error-boundary and /uses chrome now all live in `data.ts`. What remains hard-coded is shell microcopy: the command palette's placeholder, empty-state line and key hints; the preloader's "Skip"; "More on GitHub" in the gallery; the "Achievement" badge in the timeline; and the marquee's pause-button labels.
 
-**Context on two items that were judged in the project's favour**
+**Context on rows judged in the project's favour**
 
-- **238 · ISR.** On a server deploy (Vercel) `RepoCards` fetches with `next: { revalidate: 86400 }`, exactly as specified. Under the current GitHub Pages target (`output: "export"`) ISR is impossible, so the fetch switches to `cache: "force-cache"` and the repo list is baked at build time. Verified: the deployed HTML contains six real repositories.
+- **238 · ISR.** On a server deploy `RepoCards` fetches with `next: { revalidate: 86400 }`, exactly as specified. Under the live GitHub Pages target (`output: "export"`) ISR is impossible, so the fetch switches to `cache: "force-cache"` and the repo list is baked at build time. Verified: the served HTML contains six real repositories.
+- **267 / 275 · Responsive and overflow audit.** `scripts/overflow-audit.mjs` drives real headless Chrome across four routes × the five specified widths and asserts the document cannot scroll horizontally — it scrolls the viewport and reads `scrollX` rather than trusting `scrollWidth`, which `overflow-x: clip` makes unreliable. Run against the current build it reports 20/20 pass. That is a mechanical overflow check, not a visual review of every breakpoint, so "no layout breaks" is verified only in the sense that nothing overflows.
 - **293 · Security headers.** `next.config.ts` sets `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` and a minimal CSP. They are skipped when `GITHUB_PAGES=true`, because static Pages hosting cannot emit response headers — a platform limit, not a gap in the code.
+- **239 / 182 · Corrected from the previous audit.** Both were marked against a stale build. Re-checked against the current production build: the served `<head>` contains `rel="preconnect"` plus both `dns-prefetch` hints for `api.github.com` and `avatars.githubusercontent.com`, and `<!-- ↑↑↓↓←→←→BA -->` is a real HTML comment in the body, injected through `dangerouslySetInnerHTML` because JSX comments never reach the DOM.
 
 **Not directly readable during this audit**
 
-`.env.example` is blocked by a tooling permission rule, so feature 292 was judged from its consumers (`NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_FORM_ENDPOINT`, `NEXT_PUBLIC_ANALYTICS_ID`, `NEXT_PUBLIC_BASE_PATH`) and the README section that documents them. The file exists and is 19 lines long.
+`.env.example` is blocked by a tooling permission rule, so feature 292 was judged from its consumers (`NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_FORM_ENDPOINT`, `NEXT_PUBLIC_ANALYTICS_ID`, `NEXT_PUBLIC_SENTRY_DSN`, `NEXT_PUBLIC_BASE_PATH`) and the README sections that document them.

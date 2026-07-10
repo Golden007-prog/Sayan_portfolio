@@ -227,15 +227,11 @@ export function Preloader() {
     }
 
     /*
-     * The hero only mounts its loop on wide viewports with motion and data
-     * allowed. Everywhere else there is no video to wait for, so counting its
-     * weight immediately keeps the loader off the critical path instead of
-     * blocking the first paint on an asset that will never be requested.
+     * Under reduced motion or data-saver the hero never requests the loop, so
+     * counting its weight immediately keeps the loader off the critical path
+     * rather than blocking first paint on an asset nobody will fetch.
      */
-    const heroWillPlayVideo =
-      !reducedRef.current &&
-      !getSaveData() &&
-      window.matchMedia("(min-width: 768px)").matches;
+    const heroWillPlayVideo = !reducedRef.current && !getSaveData();
 
     let video: HTMLVideoElement | null = null;
     const onVideoSettled = () => markLoaded(WEIGHTS.video);

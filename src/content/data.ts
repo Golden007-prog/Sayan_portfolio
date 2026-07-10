@@ -578,6 +578,11 @@ export const media = {
   heroVideoMp4: `${bp}/media/hero-loop.mp4`,
   heroVideoWebm: `${bp}/media/hero-loop.webm`,
   heroPoster: `${bp}/media/hero-poster.jpg`,
+  // Light-mode hero loop — a bright, white-background aurora so the dark
+  // hero type reads over it (the dark loop above greyed out under light).
+  heroVideoLightMp4: `${bp}/media/hero-loop-light.mp4`,
+  heroVideoLightWebm: `${bp}/media/hero-loop-light.webm`,
+  heroPosterLight: `${bp}/media/hero-poster-light.jpg`,
   aboutPortrait: `${bp}/media/about-portrait.png`,
   aboutAmbient: `${bp}/media/about-ambient.mp4`,
   ogImage: `${bp}/media/og-image.jpg`,

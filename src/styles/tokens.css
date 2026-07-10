@@ -50,6 +50,8 @@
     rgba(5, 6, 10, 0.35) 45%,
     rgba(5, 6, 10, 0.82) 100%
   );
+  /* Radial edge vignette on the hero video (Hero.tsx) */
+  --hero-vignette: rgba(5, 6, 10, 0.55);
 
   /* Aurora blob tints */
   --aurora-1: rgba(124, 92, 255, 0.16);
@@ -81,13 +83,17 @@
   --gradient-text: linear-gradient(135deg, #5b3fd4 0%, #0b6f87 100%);
   --accent-solid: #5b3fd4;
 
-  /* Heavier scrim keeps hero video text readable in light mode */
+  /* Light mode runs the bright white-bg hero loop, so the scrim WHITENS
+     (not darkens) the video to keep the dark hero type readable, then
+     settles onto the solid page bg under the stats strip. */
   --scrim: linear-gradient(
     180deg,
-    rgba(5, 6, 10, 0.62) 0%,
-    rgba(5, 6, 10, 0.48) 45%,
-    rgba(246, 247, 251, 0.94) 100%
+    rgba(246, 247, 251, 0.42) 0%,
+    rgba(246, 247, 251, 0.26) 45%,
+    rgba(246, 247, 251, 0.96) 100%
   );
+  /* Barely-there dark vignette for depth on the light hero */
+  --hero-vignette: rgba(11, 15, 26, 0.05);
 
   --aurora-1: rgba(124, 92, 255, 0.14);
   --aurora-2: rgba(34, 211, 238, 0.12);
