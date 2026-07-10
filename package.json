@@ -10,7 +10,8 @@
     "analyze": "cross-env ANALYZE=true next build --webpack",
     "icons": "node scripts/gen-icons.mjs",
     "contrast": "node scripts/contrast.mjs",
-    "overflow": "node scripts/overflow-audit.mjs"
+    "overflow": "node scripts/overflow-audit.mjs",
+    "export-check": "node scripts/export-check.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",

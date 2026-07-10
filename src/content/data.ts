@@ -11,6 +11,16 @@
  */
 export const bp = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
+/**
+ * Strips `bp` from an asset path. Metadata image URLs (og:image, twitter:image)
+ * are resolved by Next against `metadataBase`, which already ends in the
+ * basePath — passing a bp-prefixed path yields
+ * `/Sayan_portfolio/Sayan_portfolio/…` and a dead link preview. Raw `src` and
+ * `href` attributes still need the prefix.
+ */
+export const stripBp = (path: string): string =>
+  bp && path.startsWith(bp) ? path.slice(bp.length) : path;
+
 export interface LanguageSpoken {
   name: string;
   level: string;

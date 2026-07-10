@@ -13,7 +13,7 @@ import { Analytics } from "@/components/providers/Analytics";
 import { AuroraBackground } from "@/components/fx/AuroraBackground";
 import { GrainOverlay } from "@/components/fx/GrainOverlay";
 import { ScrollProgressBar } from "@/components/fx/ScrollProgressBar";
-import { site, owner, bp, media } from "@/content/data";
+import { site, owner, bp, media, stripBp } from "@/content/data";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -57,13 +57,15 @@ export const metadata: Metadata = {
     siteName: owner.name,
     title: `${owner.name} — Mainframe Developer · AI Explorer`,
     description: site.description,
-    images: [{ url: media.ogImage, width: 1200, height: 630, alt: `${owner.name} — portfolio` }],
+    images: [
+      { url: stripBp(media.ogImage), width: 1200, height: 630, alt: `${owner.name} — portfolio` },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: `${owner.name} — Mainframe Developer · AI Explorer`,
     description: site.description,
-    images: [media.ogImage],
+    images: [stripBp(media.ogImage)],
   },
   alternates: { canonical: "/" },
   icons: {

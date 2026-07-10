@@ -34,6 +34,7 @@ jobs:
       - run: npm run build
         env:
           GITHUB_PAGES: "true" # basePath + NEXT_PUBLIC_BASE_PATH derive from this in next.config.ts
+      - run: npm run export-check # no double basePath, no leaked host paths
       - uses: actions/upload-pages-artifact@v3
         with:
           path: out
