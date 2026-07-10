@@ -109,7 +109,7 @@
   --dur-wipe: 0.9s;
 
   /* Radii */
-  --radius-glass: 1.25rem;
+  --radius-glass: 2.5rem; /* 40px corners on every glass surface site-wide */
   --radius-chip: 999px;
 
   /* Type scale (fluid) */

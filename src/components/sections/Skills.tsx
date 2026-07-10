@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   exploringNow,
@@ -16,7 +16,7 @@ import { TiltCard } from "@/components/primitives/TiltCard";
 import { Marquee } from "@/components/primitives/Marquee";
 import { CountUp } from "@/components/primitives/CountUp";
 import { SkillIcon } from "@/components/sections/SkillIcon";
-import { useToast } from "@/components/providers/ToastProvider";
+import { SkillDetailOverlay } from "@/components/sections/SkillDetailOverlay";
 import { useReducedMotionSafe } from "@/hooks/useReducedMotionSafe";
 import { cn } from "@/lib/cn";
 
@@ -70,24 +70,12 @@ const TECH_SUFFIX = techStat?.suffix ?? "+";
 export function Skills() {
   const [active, setActive] = useState<string | null>(null);
   const [view, setView] = useState<ViewMode>("chips");
-  const { toast } = useToast();
+  const [detailTech, setDetailTech] = useState<string | null>(null);
   const reduced = useReducedMotionSafe();
 
   const visible = useMemo(
     () => (active ? GROUPS.filter((g) => g.name === active) : GROUPS),
     [active],
-  );
-
-  const copyTech = useCallback(
-    async (tech: string) => {
-      try {
-        await navigator.clipboard.writeText(tech);
-        toast(`${tech} copied ✓`, { icon: "check" });
-      } catch {
-        toast("Clipboard unavailable", { icon: "info" });
-      }
-    },
-    [toast],
   );
 
   const pillSpring = reduced
@@ -236,7 +224,8 @@ export function Skills() {
                             <li key={tech}>
                               <button
                                 type="button"
-                                onClick={() => copyTech(tech)}
+                                onClick={() => setDetailTech(tech)}
+                                aria-haspopup="dialog"
                                 aria-describedby={`skills-tip-${slug(tech)}`}
                                 data-cursor="link"
                                 className={cn(
@@ -413,6 +402,10 @@ export function Skills() {
           </div>
         )}
       </div>
+      <SkillDetailOverlay
+        tech={detailTech}
+        onClose={() => setDetailTech(null)}
+      />
     </section>
   );
 }
